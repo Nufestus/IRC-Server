@@ -1,7 +1,8 @@
 #include "../includes/Server.hpp"
+class AForm;
 
 void Server::errorMessage(std::string Error) {
-    std::cerr << "IRC: " << Error << std::endl;
+    std::cerr << "IRC: " << Error << errno << std::endl;
 }
 
 Server::Server() {
@@ -22,16 +23,21 @@ Server::Server() {
         Server::errorMessage("bind failed");
     }
 
-    struct pollfd listener;
+    this->epoll_fd = epoll_create1(0);
 
-    listener.fd = server_fd;
-    listener.events = POLLIN;
+    event.events = EPOLLIN;
+    event.data.fd = server_fd;
 
-    this->pollfds.push_back(listener);
-    this->pollfds.reserve(EXPECTED_CLIENTS); // reserve for clients
-
+    epoll_ctl(this->epoll_fd, EPOLL_CTL_ADD, server_fd, &this->event);
 }
 
 Server::~Server() {
     // delete[] everything
 }
+
+
+const int Server::getServerFd() const {return this->server_fd;}
+
+const int Server::getEpollFd() const {return this->epoll_fd;}
+
+struct epoll_event & Server::getEvent() {return this->event;}

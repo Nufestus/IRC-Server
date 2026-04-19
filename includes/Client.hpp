@@ -7,6 +7,8 @@
 class Client
 {
     private:
+        std::string _internalBuffer;
+
         u_int16_t _fd;
         std::string _name;
         std::string _nickname;
@@ -20,6 +22,7 @@ class Client
         void setPassword(std::string password);
         void setRegister(bool status);
         u_int16_t getFd() const;
+        std::string& getBuffer();
         ~Client();
 };
 

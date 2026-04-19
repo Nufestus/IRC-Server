@@ -14,4 +14,6 @@ void Client::setRegister(bool status) {_register = status;}
 
 u_int16_t Client::getFd() const {return this->_fd;}
 
+std::string& Client::getBuffer() {return this->_internalBuffer;}
+
 Client::~Client() {}

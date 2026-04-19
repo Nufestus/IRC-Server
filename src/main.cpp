@@ -1,34 +1,19 @@
 #include "../includes/Server.hpp"
-
-int listenErrorHandler()
-{
-    if (errno == EBADF)
-    {
-        Server::errorMessage("File descriptor of server is not valid");
-        return EBADF;
-    }
-    else if (errno == ENOTSOCK)
-    {
-        Server::errorMessage("File descriptor is not a socket");
-        return ENOTSOCK;
-    }
-    else if (errno == EOPNOTSUPP)
-    {
-        Server::errorMessage("Socket type is wrong (datagram/UDP socket)");
-        return EOPNOTSUPP;
-    }
-}
+#include "../includes/Client.hpp"
+#include "../includes/Command.hpp"
 
 int main(int ac, char **av) 
 {
-    if (ac != 2)
+    if (ac != 3)
     {
-        Server::errorMessage("Wrong Argument(s)");
+        std::cerr << "Wrong Arguments(s)." << std::endl;
         return 1;
     }
-    Server IRC;
+
+    Server IRC(std::atoi(av[1]));
     if (listen(IRC.getServerFd(), 1024) == -1)
-        return listenErrorHandler();
+        return (perror("listen"), errno);
+
     while (true)
     {
         struct epoll_event events[MAX_EVENTS];
@@ -36,28 +21,62 @@ int main(int ac, char **av)
 
         for (int i = 0; i < nfds; i++)
         {
-            if (events[i].data.fd = IRC.getServerFd())
+            if (events[i].data.fd == IRC.getServerFd())
             {
                 struct sockaddr_in client_addr;
                 socklen_t addr_len = sizeof(client_addr);
 
                 int client_fd = accept(events[i].data.fd, reinterpret_cast<struct sockaddr *>(&client_addr), &addr_len);
+
                 if (client_fd != -1)
                 {
                     int flags = fcntl(client_fd, F_GETFL, 0);
+
                     if (flags == -1)
-                    {
-                        Server::errorMessage("fcntl F_GETFL");
-                    }
-                    if (fcntl(client_fd, F_SETFL, ))
-                    epoll_ctl(IRC.getEpollFd(), EPOLL_CTL_ADD, client_fd, &IRC.getEvent());
+                        perror("fcntl F_GETFL");
+
+                    if (fcntl(client_fd, F_SETFL, flags | O_NONBLOCK) == -1)
+                        perror("fcntl F_SETFL");
+
+                    struct epoll_event ev;
+                    ev.events = EPOLLIN;
+                    ev.data.fd = client_fd;
+                    
+                    epoll_ctl(IRC.getEpollFd(), EPOLL_CTL_ADD, client_fd, &ev);
+                    IRC.insertClient(Client(client_fd));
+                }
+                else
+                {
+                    perror("accept");
+                    return errno;
                 }
             }
             else
             {
-                char BUFFER[1024];
-                if (recv(events[i].data.fd, BUFFER, sizeof(BUFFER) - 1, 0) == -1)
-                    return recvErrorHandler();
+                std::string Buf;
+                int bytes = recv(events[i].data.fd, (void *)Buf.c_str(), sizeof(Buf) - 1, 0);
+                if (bytes == -1)
+                {
+                    perror("recv");
+                    return errno;
+                }
+                else if (!bytes)
+                {
+                    std::cout << "user disconnected" << std::endl;
+                    epoll_ctl(IRC.getEpollFd(), EPOLL_CTL_DEL, events[i].data.fd, &events[i]);
+                }
+                size_t pos;
+                while ((pos = Buf.find("\r\n")) != std::string::npos)
+                {
+                    std::string request = Buf.substr(0, pos);
+                    Buf.erase(0, pos + 2);
+
+                    // try {
+                    //     executeCommand(Command());
+                    // } catch (std::exception &e) {
+
+                    // }
+                }
             }
         }
 

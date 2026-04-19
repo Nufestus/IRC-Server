@@ -2,28 +2,31 @@
 #define SERVER_HPP
 
 #include <vector>
+#include <map>
 #include <string>
 #include <netinet/in.h>
 #include <sys/epoll.h>
 #include <cerrno>
 #include <iostream>
 #include <fcntl.h>
+#include "Client.hpp"
 
 #define MAX_EVENTS 1024
 
 class Server
 {
     private:
-        int server_fd;
-        int epoll_fd;
-        struct sockaddr_in address;
-        struct epoll_event event;
+        int _server_fd;
+        int _epoll_fd;
+        struct epoll_event _event;
+        std::map<uint16_t, Client> users;
     public:
-        static void errorMessage(std::string Error);
-        const int getServerFd() const;
-        const int getEpollFd() const;
+        void insertClient(Client user);
+        void removeClient(Client user);
+        int getServerFd() const;
+        int getEpollFd() const;
         struct epoll_event & getEvent();
-        Server();
+        Server(uint16_t port);
         ~Server();
 };
 

@@ -1,43 +1,58 @@
 #include "../includes/Server.hpp"
-class AForm;
 
-void Server::errorMessage(std::string Error) {
-    std::cerr << "IRC: " << Error << errno << std::endl;
-}
 
-Server::Server() {
-    server_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_fd = -1)
+/* sets up the port and password for the IRC server */
+Server::Server(uint16_t port)
+{
+    (void)port;
+    struct sockaddr_in address;
+
+    _server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (_server_fd == -1)
     {
         // handle server fd error
-        Server::errorMessage("socket failed");
+        perror("socket");
     }
 
-    this->address.sin_family = AF_INET;
-    this->address.sin_addr.s_addr = INADDR_ANY;
-    this->address.sin_port = htons(8080);
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(4040);
 
-    if (bind(server_fd, (const sockaddr *)&address, sizeof(address)) < 0)
+    if (bind(_server_fd, (const sockaddr *)&address, sizeof(address)) < 0)
     {
         // handle bind error
-        Server::errorMessage("bind failed");
+        perror("bind");
     }
 
-    this->epoll_fd = epoll_create1(0);
+    this->_epoll_fd = epoll_create1(0);
 
-    event.events = EPOLLIN;
-    event.data.fd = server_fd;
+    _event.events = EPOLLIN;
+    _event.data.fd = _server_fd;
 
-    epoll_ctl(this->epoll_fd, EPOLL_CTL_ADD, server_fd, &this->event);
+    int flags = fcntl(_server_fd, F_GETFL, 0);
+
+    if (flags == -1)
+        perror("fcntl F_GETFL");
+
+    if (fcntl(_server_fd, F_SETFL, flags | O_NONBLOCK) == -1)
+        perror("fcntl F_SETFL");
+
+    epoll_ctl(this->_epoll_fd, EPOLL_CTL_ADD, _server_fd, &this->_event);
 }
 
 Server::~Server() {
     // delete[] everything
 }
 
+/* returns the server socket file descriptor {constant} */
+int Server::getServerFd() const {return this->_server_fd;}
 
-const int Server::getServerFd() const {return this->server_fd;}
+/* returns the epoll file descriptor {constant} */
+int Server::getEpollFd() const {return this->_epoll_fd;}
 
-const int Server::getEpollFd() const {return this->epoll_fd;}
+/* returns the epoll_event struct {reference} */
+struct epoll_event & Server::getEvent() {return this->_event;}
 
-struct epoll_event & Server::getEvent() {return this->event;}
+void Server::insertClient(Client user) {this->users[user.getFd()] = user;}
+
+void Server::removeClient(Client user) {this->users.erase(user.getFd());}

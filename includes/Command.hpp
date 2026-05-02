@@ -13,6 +13,11 @@ class Command
     public:
         Command(std::string cmd, std::vector<std::string> args, Client& Caller);
         ~Command();
+
+        // add by mohamed
+        const std::string& getCmd() const;
+        const Client& getClient() const;
+        std::vector<std::string> getArgs() const;
 };
 
 #endif

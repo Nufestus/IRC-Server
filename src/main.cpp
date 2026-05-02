@@ -71,11 +71,11 @@ int main(int ac, char **av)
                     std::string request = Buf.substr(0, pos);
                     Buf.erase(0, pos + 2);
 
-                    // try {
-                    //     executeCommand(Command());
-                    // } catch (std::exception &e) {
+                    try {
+                        IRC.executeCommand(Command());
+                    } catch (std::exception &e) {
 
-                    // }
+                    }
                 }
             }
         }

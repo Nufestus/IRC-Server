@@ -38,6 +38,8 @@ Server::Server(uint16_t port)
         perror("fcntl F_SETFL");
 
     epoll_ctl(this->_epoll_fd, EPOLL_CTL_ADD, _server_fd, &this->_event);
+
+    initHandlers();
 }
 
 Server::~Server() {
@@ -56,3 +58,11 @@ struct epoll_event & Server::getEvent() {return this->_event;}
 void Server::insertClient(Client user) {this->users[user.getFd()] = user;}
 
 void Server::removeClient(Client user) {this->users.erase(user.getFd());}
+
+
+// Command Handlers
+void Server::initHandlers(){
+    _commandMap["PASS"] = &Server::handlePass;
+    _commandMap["NICK"] = &Server::handleNick;
+    // _commandMap["USER"] = &Server::handleUser;
+}

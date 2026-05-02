@@ -2,6 +2,12 @@
 #include "../includes/Client.hpp"
 #include "../includes/Command.hpp"
 
+void executeCommand(Server &server, Command &cmd, Client &caller) {
+    if (cmd.getCmd() == "KICK") {
+        executeKick(server, cmd, caller);
+    }
+}
+
 int main(int ac, char **av) 
 {
     if (ac != 3)
@@ -44,6 +50,22 @@ int main(int ac, char **av)
                     
                     epoll_ctl(IRC.getEpollFd(), EPOLL_CTL_ADD, client_fd, &ev);
                     IRC.insertClient(Client(client_fd));
+
+    
+                    // --- HOUSSAM'S TEST INJECTION ---
+                    // 1. Manually set a nickname so your getFdByNick() works
+                    IRC.getClient(client_fd).setNickname("Houssam");
+                    
+                    // 2. Add this client to the test channel as an operator
+                    IRC.getChannel("#test").addClient(client_fd);
+                    IRC.getChannel("#test").addOperator(client_fd);
+                    
+                    // 3. Add a "victim" for you to kick
+                    Client victim(999);
+                    victim.setNickname("victim");
+                    IRC.insertClient(victim);
+                    IRC.getChannel("#test").addClient(999);
+                    // --------------------------------
                 }
                 else
                 {
@@ -111,12 +133,7 @@ int main(int ac, char **av)
                     std::cout << std::endl;
 
                     Command Commandline(cmd, args, IRC.getClient(client_fd));
-
-                    // try {
-                    //     executeCommand(IRC, Commandline);
-                    // } catch (std::exception &e) {
-
-                    // }
+                    executeCommand(IRC, Commandline, IRC.getClient(client_fd));
                 }
             }
         }

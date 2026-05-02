@@ -3,6 +3,52 @@
 Command::Command(std::string cmd, std::vector<std::string> args, Client& Caller)
         : _cmd(cmd), _args(args), _Command_caller(Caller) {}
 
-Command::~Command() {
+Command::~Command() {}
 
+const std::string &Command::getCmd() const{
+        return _cmd;
+}
+
+const std::vector<std::string> &Command::getArgs() const{
+        return _args;
+}
+
+Client &Command::getCaller() const{
+        return _Command_caller;
+}
+
+// Start Commands Implimentation
+
+void executeKick(Server &server, Command &cmd, Client &caller){
+        std::vector<std::string> args = cmd.getArgs();
+
+        if (args.size() < 2){
+                Server::sendError(caller.getFd(), "461", "KICK :Not enough parameters");
+                return;
+        }
+
+        std::string channelName = args[0];
+        std::string target = args[1];
+        std::string reason = (args.size() > 2) ? args[2] : "No reason given";
+
+        if (!server.channelExists(channelName)){
+                Server::sendError(caller.getFd(), "403", channelName + " :No such channel");
+                return ;
+        }
+
+        Channel &channel = server.getChannel(channelName);
+
+        if (!channel.isOperator(caller.getFd())){
+                Server::sendError(caller.getFd(), "482", channelName + " :You're not channel operator");
+                return ;
+        }
+
+        int targetFd = server.getFdByNick(target);
+        if (targetFd == -1 || !channel.isClientInChannel(targetFd)){
+                Server::sendError(caller.getFd(), "441", target + " " + channelName + " :They aren't on that channel");
+                return ;
+        }
+
+        channel.removeClient(targetFd);
+        std::cout << "all good: " << target << " has been kicked from " << channelName << std::endl;
 }

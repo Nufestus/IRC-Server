@@ -24,6 +24,12 @@ class Client
         u_int16_t getFd() const;
         std::string& getBuffer();
         ~Client();
+
+        // Added by Houssam
+
+        std::string &getNickname() {
+            return _nickname;
+        }
 };
 
 #endif

@@ -30,7 +30,7 @@ void Channel::addClient(int fd){
 }
 
 void Channel::removeClient(int fd){
-    for (std::vector<int>::iterator it = _clients.begin(); it != _operators.end(); ++it)
+    for (std::vector<int>::iterator it = _clients.begin(); it != _clients.end(); ++it)
     {
         if (*it == fd)
         {
@@ -95,9 +95,9 @@ void Channel::removeFromInviteList(int fd){
 bool Channel::isInvited(int fd) const{
     for (size_t i = 0; i < _invitedList.size(); ++i){
         if (_invitedList[i] == fd)
-            return false;
+            return true;
     }
-    return true;
+    return false;
 }
 
 void Channel::setTopic(std::string topic) {

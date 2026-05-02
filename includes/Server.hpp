@@ -12,6 +12,7 @@
 #include <fcntl.h>
 #include <sstream>
 #include "Client.hpp"
+#include "Channel.hpp"
 
 #define MAX_EVENTS 1024
 
@@ -23,6 +24,8 @@ class Server
         std::string _pass;
         struct epoll_event _event;
         std::map<uint16_t, Client> _users;
+        std::map<std::string, Channel> _channels;
+
     public:
         static void sendError(int clientFd, std::string Errorcode, std::string message);
         void insertClient(Client user);
@@ -33,6 +36,13 @@ class Server
         struct epoll_event & getEvent();
         Server(uint16_t port, std::string password);
         ~Server();
+
+        // Add By Houssam
+
+        Channel &getChannel(std::string name);
+        bool channelExists(std::string name);
+        
+        int getFdByNick(std::string nickname);
 };
 
 #endif

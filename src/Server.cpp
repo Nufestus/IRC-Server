@@ -37,6 +37,20 @@ Server::Server(uint16_t port, std::string password) : _pass(password)
         perror("fcntl F_SETFL");
 
     epoll_ctl(this->_epoll_fd, EPOLL_CTL_ADD, _server_fd, &this->_event);
+
+    // Houssam tests
+
+    // 1. Create a test channel
+    Channel testChan("#test");
+    
+    // 2. Set some initial properties for your TOPIC/MODE tests
+    testChan.setTopic("This is a test topic");
+    
+    // 3. Store it in your new map
+    // (Ensure you added std::map<std::string, Channel> _channels to Server.hpp)
+    this->_channels["#test"] = testChan; 
+    
+    std::cout << "[TEST] Created #test channel for KICK/INVITE testing." << std::endl;
 }
 
 Server::~Server() {
@@ -62,4 +76,24 @@ Client& Server::getClient(uint16_t clientFd) {return _users[clientFd];}
 void Server::sendError(int clientFd, std::string errorCode, std::string message) {
     std::string response = ":irc " + errorCode + " " + message + "\r\n";
     send(clientFd, response.c_str(), response.size(), 0);
+}
+
+
+// Add By Houssam
+
+bool Server::channelExists(std::string name){
+    return this->_channels.find(name) != _channels.end();
+}
+
+Channel &Server::getChannel(std::string name){
+    return _channels[name];
+}
+
+int Server::getFdByNick(std::string nickname){
+    std::map<uint16_t, Client>::iterator it;
+    for (it = _users.begin(); it != _users.end(); ++it){
+        if (it->second.getNickname() == nickname)
+            return it->first;
+    }
+    return -1;
 }

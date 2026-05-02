@@ -4,7 +4,7 @@ CXX = c++
 
 FLAGS = -Wall -Wextra -Werror
 
-SRCS = src/main.cpp src/Server.cpp src/Client.cpp src/Command.cpp
+SRCS = src/main.cpp src/Server.cpp src/Client.cpp src/Command.cpp src/Channel.cpp
 
 OBJS = ${SRCS:.cpp=.o}
 
@@ -13,7 +13,7 @@ all: ${NAME}
 ${NAME}: ${OBJS}
 	${CXX} ${FLAGS} ${OBJS} -o $@
 
-%.o: %.cpp includes/Server.hpp includes/Client.hpp includes/Command.hpp
+%.o: %.cpp includes/Server.hpp includes/Client.hpp includes/Command.hpp includes/Channel.hpp
 	${CXX} ${FLAGS} -c $< -o $@
 
 clean:

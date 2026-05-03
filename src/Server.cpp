@@ -1,10 +1,9 @@
 #include "../includes/Server.hpp"
 
 
-/* sets up the port and password for the IRC server */
-Server::Server(uint16_t port)
+/* sets up the port, password and socket for the IRC server */
+Server::Server(uint16_t port, std::string password) : _pass(password)
 {
-    (void)port;
     struct sockaddr_in address;
 
     _server_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -16,7 +15,7 @@ Server::Server(uint16_t port)
 
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(4040);
+    address.sin_port = htons(port);
 
     if (bind(_server_fd, (const sockaddr *)&address, sizeof(address)) < 0)
     {
@@ -55,9 +54,17 @@ int Server::getEpollFd() const {return this->_epoll_fd;}
 /* returns the epoll_event struct {reference} */
 struct epoll_event & Server::getEvent() {return this->_event;}
 
-void Server::insertClient(Client user) {this->users[user.getFd()] = user;}
+void Server::insertClient(Client user) {this->_users[user.getFd()] = user;}
 
-void Server::removeClient(Client user) {this->users.erase(user.getFd());}
+void Server::removeClient(uint16_t ClientFd) {this->_users.erase(ClientFd);}
+
+/* returns a reference to the client with that fd inside the server User map */
+Client& Server::getClient(uint16_t clientFd) {return _users[clientFd];}
+
+void Server::sendError(int clientFd, std::string errorCode, std::string message) {
+    std::string response = ":irc " + errorCode + " " + message + "\r\n";
+    send(clientFd, response.c_str(), response.size(), 0);
+}
 
 
 // Command Handlers

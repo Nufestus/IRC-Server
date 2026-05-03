@@ -7,6 +7,8 @@
 class Client
 {
     private:
+        std::string _internalBuffer;
+
         u_int16_t _fd;
         std::string _user;
         std::string _nick;
@@ -42,6 +44,7 @@ class Client
         bool isRegistred() const;
 
 
+        std::string& getBuffer();
         ~Client();
 
         

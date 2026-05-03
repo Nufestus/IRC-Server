@@ -39,4 +39,5 @@ bool Client::isPassOk() const {return _passOk;}
 
 bool Client::isRegistred() const {return _registred;}
 
+std::string& Client::getBuffer() {return this->_internalBuffer;}
 

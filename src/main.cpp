@@ -10,7 +10,7 @@ int main(int ac, char **av)
         return 1;
     }
 
-    Server IRC(std::atoi(av[1]));
+    Server IRC(std::atoi(av[1]), av[2]);
     if (listen(IRC.getServerFd(), 1024) == -1)
         return (perror("listen"), errno);
 
@@ -53,27 +53,68 @@ int main(int ac, char **av)
             }
             else
             {
-                std::string Buf;
-                int bytes = recv(events[i].data.fd, (void *)Buf.c_str(), sizeof(Buf) - 1, 0);
-                if (bytes == -1)
-                {
-                    perror("recv");
-                    return errno;
-                }
-                else if (!bytes)
-                {
-                    std::cout << "user disconnected" << std::endl;
-                    epoll_ctl(IRC.getEpollFd(), EPOLL_CTL_DEL, events[i].data.fd, &events[i]);
-                }
-                size_t pos;
-                while ((pos = Buf.find("\r\n")) != std::string::npos)
-                {
-                    std::string request = Buf.substr(0, pos);
-                    Buf.erase(0, pos + 2);
+                char readBuf[1024];
+                int client_fd = events[i].data.fd;
+                Client& user = IRC.getClient(client_fd);
 
-                    try {
-                        IRC.executeCommand(Command());
-                    } catch (std::exception &e) {
+                int bytes = recv(client_fd, readBuf, sizeof(readBuf) - 1, 0);
+                if (bytes > 0)
+                {
+                    readBuf[bytes] = '\0';
+                    user.getBuffer() += readBuf;
+                }
+                else if (bytes < 0)
+                {
+                    if (errno == EAGAIN || errno == EWOULDBLOCK)
+                        continue;
+                    perror("recv");
+                    epoll_ctl(IRC.getEpollFd(), EPOLL_CTL_DEL, client_fd, &events[i]);
+                    close(client_fd);
+                    IRC.removeClient(client_fd);
+                    continue;
+                }
+                else
+                {
+                    std::cout << "user fd " << client_fd << " disconnected" << std::endl;
+                    epoll_ctl(IRC.getEpollFd(), EPOLL_CTL_DEL, client_fd, &events[i]);
+                    close(client_fd);
+                    IRC.removeClient(client_fd);
+                    continue;
+                }
+
+                if (user.getBuffer().size() > 512) {
+                    Server::sendError(client_fd, "417", "Input line too long");
+                    epoll_ctl(IRC.getEpollFd(), EPOLL_CTL_DEL, client_fd, &events[i]);
+                    close(client_fd);
+                    IRC.removeClient(client_fd);
+                    continue;
+                }
+
+                size_t pos;
+                while ((pos = user.getBuffer().find("\r\n")) != std::string::npos)
+                {
+                    std::string request = user.getBuffer().substr(0, pos);
+                    user.getBuffer().erase(0, pos + 2);
+
+                    std::stringstream ss(request);
+
+                    std::string cmd;
+                    ss >> cmd;
+
+                    std::vector<std::string> args;
+                    for (std::string buf; ss >> buf;)
+                        args.push_back(buf);
+
+                    std::cout << cmd << " ";
+                    for (auto i : args)
+                        std::cout << i << " ";
+                    std::cout << std::endl;
+
+                    Command Commandline(cmd, args, IRC.getClient(client_fd));
+
+                    // try {
+                    //     executeCommand(IRC, Commandline);
+                    // } catch (std::exception &e) {
 
                     }
                 }

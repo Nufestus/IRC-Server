@@ -6,6 +6,8 @@
 #include <algorithm>
 #include "./Client.hpp"
 
+typedef std::pair<int, bool> clientPair;
+
 class Channel
 {
     private:
@@ -17,8 +19,7 @@ class Channel
         bool _inviteOnly;
         bool _topicRestricted;
 
-        std::vector<int> _clients;
-        std::vector<int> _operators;
+        std::vector<clientPair> _clients;
         std::vector<int> _invitedList;
     public:
         Channel();
@@ -29,6 +30,8 @@ class Channel
         std::string getTopic() const;
         bool isInviteOnly() const;
         bool isTopicRestricted() const;
+        const std::vector<clientPair> &getClients() const;
+        const std::vector<int> &getInvitedList() const;
 
         void addClient(int fd);
         void removeClient(int fd);

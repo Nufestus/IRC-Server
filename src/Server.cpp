@@ -97,3 +97,8 @@ int Server::getFdByNick(std::string nickname){
     }
     return -1;
 }
+
+void Server::sendReply(int clientFd, std::string replyCode, std::string message) {
+    std::string response = ":irc " + replyCode + " " + message + "\r\n";
+    send(clientFd, response.c_str(), response.size(), 0);
+}

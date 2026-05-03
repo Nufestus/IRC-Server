@@ -24,15 +24,23 @@ bool Channel::isTopicRestricted() const{
     return this->_topicRestricted;
 }
 
+const std::vector<clientPair> &Channel::getClients() const{
+    return this->_clients;
+}
+
+const std::vector<int> &Channel::getInvitedList() const{
+    return this->_invitedList;
+}
+
 void Channel::addClient(int fd){
     if (!isClientInChannel(fd))
-        _clients.push_back(fd);
+        _clients.push_back(std::make_pair(fd, _clients.empty()));
 }
 
 void Channel::removeClient(int fd){
-    for (std::vector<int>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+    for (std::vector<clientPair>::iterator it = _clients.begin(); it != _clients.end(); ++it)
     {
-        if (*it == fd)
+        if (it->first == fd)
         {
             _clients.erase(it);
             break;
@@ -43,7 +51,7 @@ void Channel::removeClient(int fd){
 bool Channel::isClientInChannel(int fd) const{
     for (size_t i = 0; i < _clients.size(); ++i)
     {
-        if (_clients[i] == fd)
+        if (_clients[i].first == fd)
             return true;
     }
     return false;
@@ -53,26 +61,28 @@ bool Channel::isClientInChannel(int fd) const{
 // Operators management
 
 void Channel::addOperator(int fd){
-    if(!isOperator(fd))
-        _operators.push_back(fd);
+    for (size_t i = 0; i < _clients.size(); ++i){
+        if (_clients[i].first == fd){
+            _clients[i].second = true;
+            return ;
+        }
+    }
 }
 
 void Channel::removeOperator(int fd){
-    for (std::vector<int>::iterator it = _operators.begin(); it != _operators.end(); ++it)
-    {
-        if (*it == fd)
-        {
-            _operators.erase(it);
+    for (size_t i = 0; i < _clients.size(); ++i){
+        if (_clients[i].first == fd){
+            _clients[i].second = false;
             break;
         }
     }
 }
 
 bool Channel::isOperator(int fd) const{
-    for (size_t i = 0; i < _operators.size(); ++i)
+    for (size_t i = 0; i < _clients.size(); ++i)
     {
-        if (_operators[i] == fd)
-            return true;
+        if (_clients[i].first == fd)
+            return _clients[i].second;
     }
     return false;
 }

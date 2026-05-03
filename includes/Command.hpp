@@ -22,5 +22,6 @@ class Command
 };
 
 void executeKick(Server &server, Command &cmd, Client &caller);
+void executeInvite(Server &server, Command &cmd, Client &caller);
 
 #endif

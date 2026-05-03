@@ -43,6 +43,8 @@ class Server
         bool channelExists(std::string name);
         
         int getFdByNick(std::string nickname);
+
+        static void sendReply(int clientFd, std::string replyCode, std::string message);
 };
 
 #endif

@@ -3,9 +3,10 @@
 #include "../includes/Command.hpp"
 
 void executeCommand(Server &server, Command &cmd, Client &caller) {
-    if (cmd.getCmd() == "KICK") {
+    if (cmd.getCmd() == "KICK")
         executeKick(server, cmd, caller);
-    }
+    if (cmd.getCmd() == "INVITE")
+        executeInvite(server, cmd, caller);
 }
 
 int main(int ac, char **av) 
@@ -52,20 +53,39 @@ int main(int ac, char **av)
                     IRC.insertClient(Client(client_fd));
 
     
-                    // --- HOUSSAM'S TEST INJECTION ---
-                    // 1. Manually set a nickname so your getFdByNick() works
+                    ///////////////////////////////////////// Testing /////////////////////////////////////////////////
+                    Channel &test = IRC.getChannel("#test");
                     IRC.getClient(client_fd).setNickname("Houssam");
-                    
-                    // 2. Add this client to the test channel as an operator
-                    IRC.getChannel("#test").addClient(client_fd);
-                    IRC.getChannel("#test").addOperator(client_fd);
-                    
-                    // 3. Add a "victim" for you to kick
-                    Client victim(999);
+
+                    test.addClient(client_fd);
+
+                    std::cout << "TEST : Print all clients in #test" << std::endl;
+
+                    for (std::vector<clientPair>::const_iterator it = test.getClients().begin(); 
+                        it != test.getClients().end(); ++it){
+                        int Fd = it->first;
+                        bool isOperator = it->second;
+                        std::string status = isOperator ? "Operator" : "Member";
+
+                        std::cout << "Client FD : " << Fd << " | Status : " << status << std::endl;
+                    }
+
+                    std::cout << "------------------------------------------------------" << std::endl;
+
+                    ///// Test INVITE /////
+                    Client victim(666);
                     victim.setNickname("victim");
                     IRC.insertClient(victim);
-                    IRC.getChannel("#test").addClient(999);
-                    // --------------------------------
+                    // victim is not in channel yet 
+
+                    std::cout << "--- Invited List for #test ---" << std::endl;
+                    if (test.isInvited(666)) {
+                        std::cout << "Target 666 (Victim) is officially INVITED!" << std::endl;
+                    } else {
+                        std::cout << "Invite list is currently empty." << std::endl;
+                    }
+                    std::cout << "------------------------------" << std::endl;
+                    
                 }
                 else
                 {

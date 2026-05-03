@@ -52,3 +52,49 @@ void executeKick(Server &server, Command &cmd, Client &caller){
         channel.removeClient(targetFd);
         std::cout << "all good: " << target << " has been kicked from " << channelName << std::endl;
 }
+
+void executeInvite(Server &server, Command &cmd, Client &caller){
+        std::vector<std::string> args = cmd.getArgs();
+
+        if (args.size() < 2){
+                Server::sendError(caller.getFd(), "461" ,"INVITE : Not enough parameters");
+                return ;
+        }
+
+        std::string target = args[0];
+        std::string channelName = args[1];
+
+        int targetFd = server.getFdByNick(target);
+        if (targetFd == -1){
+                Server::sendError(caller.getFd(), "401", target + " :No such nick");
+                return ;
+        }
+
+        if (!server.channelExists(channelName)){
+                Server::sendError(caller.getFd(), "403", channelName + " :No such channel");
+                return;
+        }
+
+        Channel &channel = server.getChannel(channelName);
+        if (!channel.isClientInChannel(caller.getFd())){
+                Server::sendError(caller.getFd(), "442", channelName + " :You're not on that channel");
+                return ;
+        }
+
+        if (channel.isInviteOnly() && !channel.isOperator(caller.getFd())){
+                Server::sendError(caller.getFd(), "482", channelName + " :You're not a channel operator");
+                return ;
+        }
+
+        if (channel.isClientInChannel(targetFd)){
+                Server::sendError(caller.getFd(), "443", target + " " + channelName + " :is already on channel");
+                return ;
+        }
+
+        channel.addToInviteList(targetFd);
+
+        Server::sendReply(caller.getFd(), "341", caller.getNickname() + " " + target + " " + channelName);
+
+        std::string inviteMsg = ":" + caller.getNickname() + " INVITE " + target + " :" + channelName + "\r\n";
+        send(targetFd, inviteMsg.c_str(), inviteMsg.size(), 0);
+}

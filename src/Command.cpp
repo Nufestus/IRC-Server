@@ -98,3 +98,42 @@ void executeInvite(Server &server, Command &cmd, Client &caller){
         std::string inviteMsg = ":" + caller.getNickname() + " INVITE " + target + " :" + channelName + "\r\n";
         send(targetFd, inviteMsg.c_str(), inviteMsg.size(), 0);
 }
+
+void executeTopic(Server &server, Command &cmd, Client &caller){
+        std::vector<std::string> args = cmd.getArgs();
+
+        if (args.size() < 1){
+                Server::sendError(caller.getFd(), "461", "TOPIC :Not enough parameters");
+                return ;
+        }
+
+        std::string channelName = args[0];
+        
+        if (!server.channelExists(channelName)){
+                Server::sendError(caller.getFd(), "403", channelName + " :No such channel");
+                return;
+        }
+        
+        Channel &channel = server.getChannel(channelName);
+        if (!channel.isClientInChannel(caller.getFd())){
+                Server::sendError(caller.getFd(), "442", channelName + " <channel> :You're not on that channel");
+                return ;
+        }
+
+        if (args.size() == 1){
+                if (channel.getTopic().empty())
+                        Server::sendReply(caller.getFd(), "331", channelName + " :No topic is set");
+                else
+                        Server::sendReply(caller.getFd(), "332", channelName + " :" + channel.getTopic());
+                return ;
+        }
+        
+        std::string newTopic = args[1];
+        
+        if (channel.isTopicRestricted() && !channel.isOperator(caller.getFd())){
+                Server::sendError(caller.getFd(), "482", ":You're not channel operator");
+                return ;
+        }
+
+        channel.setTopic(newTopic);
+}

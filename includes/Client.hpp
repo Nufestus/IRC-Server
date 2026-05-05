@@ -15,8 +15,10 @@ class Client
         std::string _realname;
         std::string _hostname;
         bool _passOk;
+        bool _hasNick;
+        bool _hasUser;
         bool _registred;
-        bool _isOperator;
+        bool _shouldDisconnect;
         
 
     
@@ -28,20 +30,21 @@ class Client
         void setNick(std::string nickname);
         void setPassOk(bool status);
         void setRegistred(bool status);
-        void setPassOk(bool status);
-        void setRegistred(bool status);
+        void setHasNick(bool status);
+        void setHasUser(bool status);
+        void setShouldDisconnect(bool status);
 
         u_int16_t getFd() const;
         const std::string& getNick() const;
         const std::string& getUser() const;
-        const std::string& getRealName() const;
-        const std::string& getHostName() const;
+        const std::string& getRealname() const;
+        const std::string& getHostname() const;
 
-        // add by mohamed
-
-
+        bool getShouldDisconnect() const;
         bool isPassOk() const;
         bool isRegistred() const;
+        bool hasNick() const;
+        bool hasUser() const;
 
 
         std::string& getBuffer();

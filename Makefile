@@ -4,7 +4,7 @@ CXX = c++
 
 FLAGS = -Wall -Wextra -Werror
 
-SRCS = src/main.cpp src/Server.cpp src/Client.cpp src/Command.cpp
+SRCS = src/main.cpp src/Server.cpp src/Client.cpp src/Command.cpp src/Command/Pass.cpp src/Command/Nick.cpp src/Command/executeCommand.cpp 
 
 OBJS = ${SRCS:.cpp=.o}
 

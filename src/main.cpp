@@ -112,9 +112,9 @@ int main(int ac, char **av)
 
                     Command Commandline(cmd, args, IRC.getClient(client_fd));
 
-                    // try {
-                    //     executeCommand(IRC, Commandline);
-                    // } catch (std::exception &e) {
+                    try {
+                        IRC.executeCommand(user, Commandline);
+                    } catch (std::exception &e) {
 
                     }
                 }

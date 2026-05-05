@@ -61,6 +61,8 @@ void Server::removeClient(uint16_t ClientFd) {this->_users.erase(ClientFd);}
 /* returns a reference to the client with that fd inside the server User map */
 Client& Server::getClient(uint16_t clientFd) {return _users[clientFd];}
 
+const std::string Server::getPassword() const {return this->_password;}
+
 void Server::sendError(int clientFd, std::string errorCode, std::string message) {
     std::string response = ":irc " + errorCode + " " + message + "\r\n";
     send(clientFd, response.c_str(), response.size(), 0);
@@ -71,5 +73,7 @@ void Server::sendError(int clientFd, std::string errorCode, std::string message)
 void Server::initHandlers(){
     _commandMap["PASS"] = &Server::handlePass;
     _commandMap["NICK"] = &Server::handleNick;
-    // _commandMap["USER"] = &Server::handleUser;
+    _commandMap["USER"] = &Server::handleUser;
+    _commandMap["QUIT"] = &Server::handleQuit;
+
 }

@@ -29,10 +29,10 @@ class Server
         typedef void (Server::*CommandHandler)(Client&, const Command&);
         std::map<std::string, CommandHandler> _commandMap; 
         void handleNick(Client&, const Command&);
-        void handleUser(Client&, Command&);
+        void handleUser(Client&, const Command&);
         void handlePass(Client&, const Command&);
-        void handlePrivmsg(Client&, Command&);
-        void handleQuit(Client&, Command&);
+        void handlePrivmsg(Client&, const Command&);
+        void handleQuit(Client&, const Command&);
         std::string _password;
 
     public:

@@ -20,34 +20,33 @@ static bool isValidNick(const std::string& nick){
 
 void Server::handleNick(Client& client, const Command& cmd){
 	
-	// check if the args are valid
 	if (cmd.getArgs().empty() || cmd.getArgs()[0].empty()) {
-		// send error message to client
+		sendError(431, "ERR_NONICKNAMEGIVEN", ":No nickname given");
 		return;
 	}
 
-	// check if the client has set a password
-	if (!client.isPassOk())
-		// return an error : ERR_PASSWDMISMATCH (464)
-
-	// check if the nickname is valid
 	if (!isValidNick(cmd.getArgs()[0])) {
-		// send error message to client
+		std::string error = cmd.getArgs()[0] + " :Erroneus nickname";
+		sendError(432, "ERR_ERRONEUSNICKNAME", error);
 		return;
 	}
-	// check if the nickname is already in use
-	for (std::map<uint16_t, Client>::iterator it = users.begin(); it != users.end(); ++it) {
+
+	for (std::map<uint16_t, Client>::iterator it = _users.begin(); it != _users.end(); ++it) {
 		if (it->second.getNick() == cmd.getArgs()[0]) {
-			// send error message to client
+			std::string error = cmd.getArgs()[0] + " :Nickname is already in use";
+			sendError(433, "ERR_NICKNAMEINUSE", error);
 			return;
 		}
 	}
-	// check if the client is already registered
-	client.setNick(cmd.getArgs()[0]);
-	if (client.isRegistred())
-		// return an error : ERR_ALREADYREGISTRED (462)
-
-		send(client.getFd(), "Nickname set successfully\n", 28, 0);
-		
-
+	std::string old_nick = client.getNick().empty() ? "*" : client.getNick();
+	std::string new_nick = cmd.getArgs()[0];
+	client.setNick(new_nick);
+	// broadcast a NICK message to the user and their shared channel members
+	if (client.isRegistred()){
+		std::string msg = ":" + old_nick + "!" + client.getUser() + "@" + client.getHostname() + "NICK :" + new_nick + "\r\n";
+		send(client.getFd(), msg.c_str(), msg.length(), 0);
+		// broadcastToSharedChannels(client, msg);
+	} else {
+		client.setHasNick(true);
+	}
 }

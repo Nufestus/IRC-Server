@@ -2,7 +2,7 @@
 
 
 /* sets up the port, password and socket for the IRC server */
-Server::Server(uint16_t port, std::string password) : _pass(password)
+Server::Server(uint16_t port, std::string password) : _password(password)
 {
     struct sockaddr_in address;
 
@@ -37,8 +37,6 @@ Server::Server(uint16_t port, std::string password) : _pass(password)
         perror("fcntl F_SETFL");
 
     epoll_ctl(this->_epoll_fd, EPOLL_CTL_ADD, _server_fd, &this->_event);
-
-    initHandlers();
 }
 
 Server::~Server() {
@@ -61,19 +59,75 @@ void Server::removeClient(uint16_t ClientFd) {this->_users.erase(ClientFd);}
 /* returns a reference to the client with that fd inside the server User map */
 Client& Server::getClient(uint16_t clientFd) {return _users[clientFd];}
 
+std::map<uint16_t, Client>& Server::getUsers() {return this->_users;}
+
+const std::map<uint16_t, Client>& Server::getUsers() const {return this->_users;}
+
 const std::string Server::getPassword() const {return this->_password;}
+
+Channel* Server::getChannel(const std::string& channelName)
+{
+    std::map<std::string, Channel>::iterator it = _channels.find(channelName);
+    if (it == _channels.end())
+        return NULL;
+    return &it->second;
+}
+
+const Channel* Server::getChannel(const std::string& channelName) const
+{
+    std::map<std::string, Channel>::const_iterator it = _channels.find(channelName);
+    if (it == _channels.end())
+        return NULL;
+    return &it->second;
+}
 
 void Server::sendError(int clientFd, std::string errorCode, std::string message) {
     std::string response = ":irc " + errorCode + " " + message + "\r\n";
     send(clientFd, response.c_str(), response.size(), 0);
 }
 
+void Server::sendNumeric(int clientFd, int code, const std::string& targetNick, const std::string& message) {
+    std::vector<std::string> params;
+    sendNumeric(clientFd, code, targetNick, params, message);
+}
 
-// Command Handlers
-void Server::initHandlers(){
-    _commandMap["PASS"] = &Server::handlePass;
-    _commandMap["NICK"] = &Server::handleNick;
-    _commandMap["USER"] = &Server::handleUser;
-    _commandMap["QUIT"] = &Server::handleQuit;
+void Server::sendNumeric(int clientFd, int code, const std::string& targetNick, const std::vector<std::string>& params, const std::string& message) {
+    std::ostringstream oss;
+    oss << ":irc " << std::setfill('0') << std::setw(3) << code << " " 
+        << targetNick;
 
+    for (std::vector<std::string>::const_iterator it = params.begin(); it != params.end(); ++it)
+    {
+        oss << " " << *it;
+    }
+
+    if (!message.empty())
+    {
+        if (message[0] == ':')
+            oss << " " << message;
+        else
+            oss << " :" << message;
+    }
+    
+    std::string response = oss.str();
+    send(clientFd, response.c_str(), response.size(), 0);
+}
+
+
+Channel* Server::getOrCreateChannel(const std::string& channelName, Client* creator)
+{
+    std::map<std::string, Channel>::iterator it = _channels.find(channelName);
+    if (it != _channels.end())
+    {
+        return &(it->second);
+    }
+
+    if (!creator)
+    {
+        return NULL;
+    }
+
+    std::pair<std::map<std::string, Channel>::iterator, bool> result =
+        _channels.insert(std::make_pair(channelName, Channel(channelName, *creator)));
+    return &result.first->second;
 }

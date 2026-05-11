@@ -3,9 +3,18 @@
 
 #include <iostream>
 #include <vector>
+#include <string>
 
 class Client
 {
+    public:
+        enum class AuthState
+        {
+            AwaitPass,
+            AwaitNickUser,
+            Registered
+        };
+
     private:
         std::string _internalBuffer;
 
@@ -14,24 +23,16 @@ class Client
         std::string _nick;
         std::string _realname;
         std::string _hostname;
-        bool _passOk;
-        bool _hasNick;
-        bool _hasUser;
-        bool _registred;
+        AuthState _authState;
         bool _shouldDisconnect;
-        
 
-    
     public:
         Client();
         Client(u_int16_t fd);
         
         void setUser(const std::string& user, const std::string& realname);
         void setNick(std::string nickname);
-        void setPassOk(bool status);
-        void setRegistred(bool status);
-        void setHasNick(bool status);
-        void setHasUser(bool status);
+        void setAuthState(AuthState state);
         void setShouldDisconnect(bool status);
 
         u_int16_t getFd() const;
@@ -41,6 +42,8 @@ class Client
         const std::string& getHostname() const;
 
         bool getShouldDisconnect() const;
+        AuthState getAuthState() const;
+        bool isRegistered() const;
         bool isPassOk() const;
         bool isRegistred() const;
         bool hasNick() const;

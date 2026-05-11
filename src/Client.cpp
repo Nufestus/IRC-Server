@@ -1,11 +1,15 @@
 #include "../includes/Client.hpp"
 
-Client::Client() {}
+Client::Client()
+    : _fd(0),
+      _authState(AuthState::AwaitPass),
+      _shouldDisconnect(false)
+{}
 
 Client::Client(u_int16_t fd) 
 		: _fd(fd),
-		  _passOk(false),
-		  _registred(false)
+		  _authState(AuthState::AwaitPass),
+		  _shouldDisconnect(false)
 {}
 Client::~Client() {}
 
@@ -18,13 +22,7 @@ void Client::setUser(const std::string& user, const std::string& realname) {
 
 void Client::setNick(std::string nickname) {_nick = nickname;}
 
-void Client::setPassOk(bool status) {_passOk = status;}
-
-void Client::setRegistred(bool status) {_registred = status;}
-
-void Client::setHasNick(bool status) {_hasNick = status;}
-
-void Client::setHasUser(bool status) {_hasUser = status;}
+void Client::setAuthState(AuthState state) {_authState = state;}
 
 void Client::setShouldDisconnect(bool status) {_shouldDisconnect = status;}
 
@@ -40,13 +38,17 @@ const std::string& Client::getRealname() const {return _realname;}
 
 const std::string& Client::getHostname() const {return _hostname;}
 
-bool Client::isPassOk() const {return _passOk;}
+Client::AuthState Client::getAuthState() const {return _authState;}
 
-bool Client::isRegistred() const {return _registred;}
+bool Client::isRegistered() const {return _authState == AuthState::Registered;}
 
-bool Client::hasNick() const {return _hasNick;}
+bool Client::isPassOk() const {return _authState != AuthState::AwaitPass;}
 
-bool Client::hasUser() const {return _hasUser;}
+bool Client::isRegistred() const {return isRegistered();}
+
+bool Client::hasNick() const {return !_nick.empty();}
+
+bool Client::hasUser() const {return !_user.empty();}
 
 bool Client::getShouldDisconnect() const {return _shouldDisconnect;}
 

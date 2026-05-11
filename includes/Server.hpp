@@ -11,8 +11,11 @@
 #include <iostream>
 #include <fcntl.h>
 #include <sstream>
+#include <iomanip>
 #include "Client.hpp"
-#include "Command.hpp"
+#include "CommandManager.hpp"
+#include "IRCReplies.hpp"
+#include "Channel.hpp"
 
 #define MAX_EVENTS 1024
 
@@ -21,35 +24,30 @@ class Server
     private:
         int _server_fd;
         int _epoll_fd;
-        std::string _pass;
         struct epoll_event _event;
         std::map<uint16_t, Client> _users;
-
-        // add by mohamed
-        typedef void (Server::*CommandHandler)(Client&, const Command&);
-        std::map<std::string, CommandHandler> _commandMap; 
-        void handleNick(Client&, const Command&);
-        void handleUser(Client&, const Command&);
-        void handlePass(Client&, const Command&);
-        void handlePrivmsg(Client&, const Command&);
-        void handleQuit(Client&, const Command&);
+        std::map<std::string, Channel> _channels;
         std::string _password;
 
     public:
         static void sendError(int clientFd, std::string Errorcode, std::string message);
+        static void sendNumeric(int clientFd, int code, const std::string& targetNick, const std::string& message);
+        static void sendNumeric(int clientFd, int code, const std::string& targetNick, const std::vector<std::string>& params, const std::string& message);
         void insertClient(Client user);
         void removeClient(uint16_t clientFd);
         Client& getClient(uint16_t clientFd);
+        std::map<uint16_t, Client>& getUsers();
+        const std::map<uint16_t, Client>& getUsers() const;
         int getServerFd() const;
         int getEpollFd() const;
         struct epoll_event & getEvent();
         Server(uint16_t port, std::string password);
         ~Server();
 
-        // add by mohamed
-        void initHandlers();
-        void executeCommand(Client& client, const Command& cmd);
         const std::string getPassword() const;
+    Channel* getChannel(const std::string& channelName);
+    const Channel* getChannel(const std::string& channelName) const;
+        Channel* getOrCreateChannel(const std::string& channelName, Client* creator);
 };
 
 #endif

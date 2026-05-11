@@ -1,6 +1,7 @@
 #include "../includes/Server.hpp"
 #include "../includes/Client.hpp"
 #include "../includes/Command.hpp"
+#include "../includes/CommandManager.hpp"
 
 int main(int ac, char **av) 
 {
@@ -11,6 +12,7 @@ int main(int ac, char **av)
     }
 
     Server IRC(std::atoi(av[1]), av[2]);
+    CommandManager cmdManager(IRC);
     if (listen(IRC.getServerFd(), 1024) == -1)
         return (perror("listen"), errno);
 
@@ -18,9 +20,10 @@ int main(int ac, char **av)
     {
         struct epoll_event events[MAX_EVENTS];
         int nfds = epoll_wait(IRC.getEpollFd(), events, MAX_EVENTS, -1);
-
+        std::cout << "Epoll woke up! Number of events: " << nfds << std::endl;
         for (int i = 0; i < nfds; i++)
         {
+            std::cout << "Handling event for FD: " << events[i].data.fd << std::endl; // PRINT 2
             if (events[i].data.fd == IRC.getServerFd())
             {
                 struct sockaddr_in client_addr;
@@ -30,6 +33,7 @@ int main(int ac, char **av)
 
                 if (client_fd != -1)
                 {
+                    std::cout << "NEW CONNECTION: FD " << client_fd << std::endl;
                     int flags = fcntl(client_fd, F_GETFL, 0);
 
                     if (flags == -1)
@@ -42,7 +46,12 @@ int main(int ac, char **av)
                     ev.events = EPOLLIN;
                     ev.data.fd = client_fd;
                     
-                    epoll_ctl(IRC.getEpollFd(), EPOLL_CTL_ADD, client_fd, &ev);
+                    if (epoll_ctl(IRC.getEpollFd(), EPOLL_CTL_ADD, client_fd, &ev) == -1)
+                    {
+                        perror("epoll_ctl: client_fd");
+                    } else {
+                        std::cout << "Added client FD " << client_fd << " to epoll" << std::endl;
+                    }
                     IRC.insertClient(Client(client_fd));
                 }
                 else
@@ -58,6 +67,7 @@ int main(int ac, char **av)
                 Client& user = IRC.getClient(client_fd);
 
                 int bytes = recv(client_fd, readBuf, sizeof(readBuf) - 1, 0);
+                std::cout << "Recv called. Bytes received: " << bytes << std::endl; // PRINT 3
                 if (bytes > 0)
                 {
                     readBuf[bytes] = '\0';
@@ -91,7 +101,7 @@ int main(int ac, char **av)
                 }
 
                 size_t pos;
-                while ((pos = user.getBuffer().find("\r\n")) != std::string::npos)
+                while ((pos = user.getBuffer().find("\n")) != std::string::npos)
                 {
                     std::string request = user.getBuffer().substr(0, pos);
                     user.getBuffer().erase(0, pos + 2);
@@ -101,6 +111,7 @@ int main(int ac, char **av)
                     std::string cmd;
                     ss >> cmd;
 
+                    std::cout << "Received command: " << cmd << std::endl;
                     std::vector<std::string> args;
                     for (std::string buf; ss >> buf;)
                         args.push_back(buf);
@@ -113,7 +124,7 @@ int main(int ac, char **av)
                     Command Commandline(cmd, args, IRC.getClient(client_fd));
 
                     try {
-                        IRC.executeCommand(user, Commandline);
+                        cmdManager.executeCommand(user, Commandline);
                     } catch (std::exception &e) {
 
                     }

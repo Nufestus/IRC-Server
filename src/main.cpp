@@ -101,7 +101,7 @@ int main(int ac, char **av)
                 }
 
                 size_t pos;
-                while ((pos = user.getBuffer().find("\n")) != std::string::npos)
+                while ((pos = user.getBuffer().find("\r\n")) != std::string::npos)
                 {
                     std::string request = user.getBuffer().substr(0, pos);
                     user.getBuffer().erase(0, pos + 2);

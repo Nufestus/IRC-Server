@@ -18,6 +18,7 @@ void CommandManager::registerHandlers()
     _commandMap["QUIT"] = &CommandManager::handleQuit;
 	_commandMap["PRIVMSG"] = &CommandManager::handlePrivmsg;
 	_commandMap["JOIN"] = &CommandManager::handleJoin;
+	_commandMap["INVITE"] = &CommandManager::handleInvite;
 }
 
 void CommandManager::executeCommand(Client& client, const Command& cmd)
@@ -48,7 +49,7 @@ void CommandManager::handlePass(Client& client, const Command& cmd)
 {
     std::vector<std::string> args = cmd.getArgs();
 
-    if (args.empty() || args.size() == 0)
+    if (args.empty() || args[0].empty())
     {
         Server::sendNumeric(client.getFd(), 461, "*", "PASS :Not enough parameters");
         return;
@@ -119,7 +120,7 @@ void CommandManager::handleNick(Client& client, const Command& cmd)
         return;
     }
 
-    if (client.hasNick() || client.isRegistered())
+    if (client.hasNick() || client.isRegistred())
     {
         std::string oldPrefix = client.getNick() + "!" + client.getUser() + "@" + client.getHostname();
         std::string msg = ":" + oldPrefix + " NICK :" + newNick + "\r\n";
@@ -144,7 +145,7 @@ void CommandManager::handleUser(Client& client, const Command& cmd)
         return;
     }
 
-    if (client.hasUser() || client.isRegistered())
+    if (client.hasUser() || client.isRegistred())
     {
         std::string target = client.hasNick() ? client.getNick() : "*";
         Server::sendNumeric(client.getFd(), 462, target, ":You have already registered");
@@ -166,7 +167,7 @@ void CommandManager::handleQuit(Client& client, const Command& cmd)
 
     (void)broadcastMsg;
     send(client.getFd(), errorMsg.c_str(), errorMsg.length(), 0);
-    if (client.isRegistered())
+    if (client.isRegistred())
     {
         // broadcastToSharedChannels(client, broadcastMsg);
     }
@@ -219,7 +220,18 @@ void CommandManager::handlePrivmsg(Client& client, const Command& cmd)
     }
 
     std::vector<std::string> targets = splitCommaSeparated(args[0]);
-    std::string message = args[1];
+    for (std::size_t i = 0; i < targets.size(); ++i)
+    {
+        if (!server.userExists(targets[i]))
+        {
+            Server::sendNumeric(client.getFd(), 401, targets[i], ":No such nick/channel");
+            continue;
+        } else {
+            Client* targetClient = server.getClient(targets[i]);
+            std::string msg = ":" + client.getNick() + " PRIVMSG " + targets[i] + " :" + args[1] + "\r\n";
+            server.sendToClient(targetClient->getFd(), msg);
+        }
+    }
 }
 
 
@@ -249,12 +261,16 @@ void CommandManager::handleJoin(Client& client, const Command& cmd)
 
         if (channel->isInviteOnly() && !channel->hasMember(client))
         {
-            Server::sendNumeric(client.getFd(), 473, channelName, ":Cannot join channel (+i)");
-            continue;
+            if (!channel->isInvited(client)){
+                Server::sendNumeric(client.getFd(), 473, channelName, ":Cannot join channel (+i)");
+                continue;
+            }
         }
         if (!channel->hasMember(client))
             channel->addMember(client);
         client.addChannel(channel);
+        if (channel->isInviteOnly())
+            channel->deinviteClient(client);
         // The Channel Broadcast (The Announcement) : Broadcast to all members of the channel that a new user has joined (including the joining user)
         // The State Sync (Sent ONLY to the joining user)
         Server::stateSync(client, *channel);
@@ -265,36 +281,36 @@ void CommandManager::handleInvite(Client& client, const Command& cmd)
 {
     if (cmd.getArgs().size() != 2)
     {
-        server.sendNumeric(client.getFd(), 461, "*", "INVITE :Not enough parameters");
+        Server::sendNumeric(client.getFd(), 461, "*", "INVITE :Not enough parameters");
         return;
     }
     std::string targetNick = cmd.getArgs()[0];
     std::string channelName = cmd.getArgs()[1];
 
     if (!server.userExists(targetNick)){
-        server.sendNumeric(client.getFd(), 401, targetNick, ":No such nick/channel");
+        Server::sendNumeric(client.getFd(), 401, targetNick, ":No such nick/channel");
         return;
     }
     if (!server.getChannel(channelName)){
-        server.sendNumeric(client.getFd(), 403, channelName, ":No such channel");
+        Server::sendNumeric(client.getFd(), 403, channelName, ":No such channel");
         return;
     }
     if (!client.isInChannel(channelName)){
-        server.sendNumeric(client.getFd(), 442, channelName, ":You're not on that channel");
+        Server::sendNumeric(client.getFd(), 442, channelName, ":You're not on that channel");
         return;
     }
     Client* targetClient = server.getClient(targetNick);
     if (targetClient->isInChannel(channelName)){
-        server.sendNumeric(client.getFd(), 443, targetNick + " " + channelName, ":is already on channel");
+        Server::sendNumeric(client.getFd(), 443, targetNick + " " + channelName, ":is already on channel");
         return;
     }
     Channel* channel = server.getChannel(channelName);
-    // 
     if (channel->isInviteOnly() && !channel->isOperator(client)){
-        server.sendNumeric(client.getFd(), 482, channelName, ":You're not channel operator");
+        Server::sendNumeric(client.getFd(), 482, channelName, ":You're not channel operator");
         return;
     }
     channel->inviteClient(*targetClient);
-    server.sendNumeric(client.getFd(), 341, client.getNick(), targetNick + " " + channelName);
-    
+    Server::sendNumeric(client.getFd(), 341, client.getNick(), targetNick + " " + channelName);
+    std::string inviteMsg = ":" + client.getNick() + " INVITE " + targetNick + " :" + channelName + "\r\n";
+    server.sendToClient(targetClient->getFd(), inviteMsg);
 }

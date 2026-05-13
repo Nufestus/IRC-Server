@@ -66,7 +66,7 @@ Client* Server::getClient(const std::string& nick)
         if (it->second.getNick() == nick)
             return &it->second;
     }
-    throw std::runtime_error("No client with that nickname");
+    return NULL;
 }
 
 std::map<uint16_t, Client>& Server::getUsers() {return this->_users;}
@@ -111,6 +111,10 @@ void Server::sendNumeric(int clientFd, int code, const std::string& targetNick, 
     
     std::string response = oss.str() + "\r\n";
     send(clientFd, response.c_str(), response.size(), 0);
+}
+
+void Server::sendToClient(int clientFd, const std::string& message) {
+    send(clientFd, message.c_str(), message.size(), 0);
 }
 
 

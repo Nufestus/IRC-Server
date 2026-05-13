@@ -6,6 +6,7 @@ class Client;
 
 #include <map>
 #include <string>
+#include <vector>
 
 class Client;
 
@@ -39,6 +40,7 @@ class Channel
 		
 		void inviteClient(Client& target);
 		void deinviteClient(Client& target);
+		bool isInvited(const Client& target) const;
 
 	private:
 		std::string name;

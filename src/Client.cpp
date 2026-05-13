@@ -41,11 +41,9 @@ const std::string& Client::getHostname() const {return _hostname;}
 
 Client::AuthState Client::getAuthState() const {return _authState;}
 
-bool Client::isRegistered() const {return _authState == AuthState::Registered;}
+bool Client::isRegistred() const {return _authState == AuthState::Registered;}
 
 bool Client::isPassOk() const {return _authState != AuthState::AwaitPass;}
-
-bool Client::isRegistred() const {return isRegistered();}
 
 bool Client::hasNick() const {return !_nick.empty();}
 

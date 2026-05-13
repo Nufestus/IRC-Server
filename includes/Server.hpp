@@ -14,7 +14,6 @@
 #include <iomanip>
 #include "Client.hpp"
 #include "CommandManager.hpp"
-#include "IRCReplies.hpp"
 #include "Channel.hpp"
 
 #define MAX_EVENTS 1024
@@ -32,6 +31,7 @@ class Server
     public:
         static void sendError(int clientFd, std::string Errorcode, std::string message);
         static void sendNumeric(int clientFd, int code, const std::string& targetNick, const std::string& message);
+        void sendToClient(int clientFd, const std::string& message);
         void insertClient(Client user);
         void removeClient(uint16_t clientFd);
         Client& getClient(uint16_t clientFd);

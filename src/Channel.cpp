@@ -91,3 +91,13 @@ void Channel::deinviteClient(Client& target)
 		}
 	}
 }
+
+bool Channel::isInvited(const Client& target) const
+{
+	for (std::vector<Client*>::const_iterator it = inviteList.begin(); it != inviteList.end(); ++it)
+	{
+		if (*it == &target)
+			return true;
+	}
+	return false;
+}

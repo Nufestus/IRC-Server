@@ -17,7 +17,7 @@ class Command
         // add by mohamed
         const std::string& getCmd() const;
         const Client& getClient() const;
-        std::vector<std::string> getArgs() const;
+        const std::vector<std::string>& getArgs() const;
 };
 
 #endif

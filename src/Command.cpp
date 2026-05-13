@@ -9,4 +9,4 @@ Command::~Command() {
 
 const std::string& Command::getCmd() const { return this->_cmd; }
 const Client& Command::getClient() const { return this->_Command_caller; }
-std::vector<std::string> Command::getArgs() const { return this->_args; }
+const std::vector<std::string>& Command::getArgs() const { return this->_args; }

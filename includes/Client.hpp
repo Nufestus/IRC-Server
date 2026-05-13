@@ -48,9 +48,8 @@ class Client
 
         bool getShouldDisconnect() const;
         AuthState getAuthState() const;
-        bool isRegistered() const;
-        bool isPassOk() const;
         bool isRegistred() const;
+        bool isPassOk() const;
         bool hasNick() const;
         bool hasUser() const;
 

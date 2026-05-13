@@ -1,4 +1,5 @@
 #include "../includes/Client.hpp"
+#include "../includes/Channel.hpp"
 
 Client::Client()
     : _fd(0),
@@ -53,4 +54,36 @@ bool Client::hasUser() const {return !_user.empty();}
 bool Client::getShouldDisconnect() const {return _shouldDisconnect;}
 
 std::string& Client::getBuffer() {return this->_internalBuffer;}
+
+const std::string Client::getPrefix() const
+{
+    std::string nick = _nick.empty() ? "*" : _nick;
+    std::string user = _user.empty() ? "unknown" : _user;
+    std::string host = _hostname.empty() ? "localhost" : _hostname;
+    return ":" + nick + "!" + user + "@" + host;
+}
+
+void Client::addChannel(Channel* ch)
+{
+  if (!ch)
+    return;
+  _channels[ch->getName()] = ch;
+}
+
+void Client::removeChannel(Channel* ch)
+{
+  if (!ch)
+    return;
+  _channels.erase(ch->getName());
+}
+
+bool Client::isInChannel(const std::string& name) const
+{
+  return _channels.find(name) != _channels.end();
+}
+
+const std::map<std::string, Channel*>& Client::getChannels() const
+{
+  return _channels;
+}
 

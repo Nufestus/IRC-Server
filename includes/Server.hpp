@@ -32,7 +32,6 @@ class Server
     public:
         static void sendError(int clientFd, std::string Errorcode, std::string message);
         static void sendNumeric(int clientFd, int code, const std::string& targetNick, const std::string& message);
-        static void sendNumeric(int clientFd, int code, const std::string& targetNick, const std::vector<std::string>& params, const std::string& message);
         void insertClient(Client user);
         void removeClient(uint16_t clientFd);
         Client& getClient(uint16_t clientFd);
@@ -45,9 +44,10 @@ class Server
         ~Server();
 
         const std::string getPassword() const;
-    Channel* getChannel(const std::string& channelName);
-    const Channel* getChannel(const std::string& channelName) const;
+        Channel* getChannel(const std::string& channelName);
+        const Channel* getChannel(const std::string& channelName) const;
         Channel* getOrCreateChannel(const std::string& channelName, Client* creator);
+        static void stateSync(Client& client, const Channel& channel);
 };
 
 #endif

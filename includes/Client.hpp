@@ -4,6 +4,9 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <map>
+
+class Channel;
 
 class Client
 {
@@ -25,6 +28,7 @@ class Client
         std::string _hostname;
         AuthState _authState;
         bool _shouldDisconnect;
+        std::map<std::string, Channel*> _channels;
 
     public:
         Client();
@@ -40,6 +44,7 @@ class Client
         const std::string& getUser() const;
         const std::string& getRealname() const;
         const std::string& getHostname() const;
+        const std::string getPrefix() const;
 
         bool getShouldDisconnect() const;
         AuthState getAuthState() const;
@@ -52,6 +57,11 @@ class Client
 
         std::string& getBuffer();
         ~Client();
+
+        void addChannel(Channel* ch);
+        void removeChannel(Channel* ch);
+        bool isInChannel(const std::string& name) const;
+        const std::map<std::string, Channel*>& getChannels() const;
 
         
 };

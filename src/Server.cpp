@@ -87,19 +87,9 @@ void Server::sendError(int clientFd, std::string errorCode, std::string message)
 }
 
 void Server::sendNumeric(int clientFd, int code, const std::string& targetNick, const std::string& message) {
-    std::vector<std::string> params;
-    sendNumeric(clientFd, code, targetNick, params, message);
-}
-
-void Server::sendNumeric(int clientFd, int code, const std::string& targetNick, const std::vector<std::string>& params, const std::string& message) {
     std::ostringstream oss;
     oss << ":irc " << std::setfill('0') << std::setw(3) << code << " " 
         << targetNick;
-
-    for (std::vector<std::string>::const_iterator it = params.begin(); it != params.end(); ++it)
-    {
-        oss << " " << *it;
-    }
 
     if (!message.empty())
     {
@@ -109,7 +99,7 @@ void Server::sendNumeric(int clientFd, int code, const std::string& targetNick, 
             oss << " :" << message;
     }
     
-    std::string response = oss.str();
+    std::string response = oss.str() + "\r\n";
     send(clientFd, response.c_str(), response.size(), 0);
 }
 
@@ -118,16 +108,31 @@ Channel* Server::getOrCreateChannel(const std::string& channelName, Client* crea
 {
     std::map<std::string, Channel>::iterator it = _channels.find(channelName);
     if (it != _channels.end())
-    {
         return &(it->second);
-    }
 
     if (!creator)
-    {
         return NULL;
-    }
 
     std::pair<std::map<std::string, Channel>::iterator, bool> result =
         _channels.insert(std::make_pair(channelName, Channel(channelName, *creator)));
     return &result.first->second;
+}
+
+void Server::stateSync(Client& client, const Channel& channel){
+
+    std::string memberList;
+    const std::map<Client*, bool>& members = channel.getClients();
+    for (std::map<Client*, bool>::const_iterator it = members.begin(); it != members.end(); ++it)
+    {
+        if (!memberList.empty())
+            memberList += " ";
+        if (it->second)
+            memberList += "@";
+        memberList += it->first->getNick();
+    }
+    // The topic (if any) : Send the channel topic to the joining user. If no topic is set, send a numeric reply indicating that there is no topic.
+    // The member list : Send the list of current members in the channel to the joining user
+    sendNumeric(client.getFd(), 353, client.getNick(), ":= " + channel.getName() + " :" + memberList);
+    sendNumeric(client.getFd(), 366, client.getNick(), channel.getName() + " :End of NAMES list");
+
 }

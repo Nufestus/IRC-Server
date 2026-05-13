@@ -111,15 +111,30 @@ int main(int ac, char **av)
                     std::string cmd;
                     ss >> cmd;
 
-                    std::cout << "Received command: " << cmd << std::endl;
                     std::vector<std::string> args;
-                    for (std::string buf; ss >> buf;)
-                        args.push_back(buf);
+                    std::string token;
 
-                    std::cout << cmd << " ";
-                    for (auto i : args)
-                        std::cout << i << " ";
-                    std::cout << std::endl;
+                    while (ss >> token)
+                    {
+                        if (token[0] == ':')
+                        {
+                            std::string trailing = token;
+                            std::string rest;
+                            if (std::getline(ss, rest))
+                                trailing += rest;
+                            args.push_back(trailing);
+                            break;
+                        }
+                        else
+                        {
+                            args.push_back(token);
+                        }
+                    }
+
+                    for (size_t i = 0; i < args.size(); ++i)
+                    {
+                        std::cout << "Arg " << i << ": " << args[i] << std::endl;
+                    }
 
                     Command Commandline(cmd, args, IRC.getClient(client_fd));
 

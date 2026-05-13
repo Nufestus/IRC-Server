@@ -1,4 +1,6 @@
 #include "../includes/Channel.hpp"
+#include "../includes/Client.hpp"
+#include <sys/socket.h>
 
 Channel::Channel() : inviteOnly(false)
 {
@@ -6,7 +8,7 @@ Channel::Channel() : inviteOnly(false)
 
 Channel::Channel(const std::string& name, Client& creator) : name(name), inviteOnly(false)
 {
-	members[&creator] = true; // The creator is an operator
+	members[&creator] = true;
 }
 
 Channel::~Channel()
@@ -61,4 +63,14 @@ void Channel::setInviteOnly(bool status)
 size_t Channel::memberCount() const
 {
 	return members.size();
+}
+
+void Channel::broadcast(const std::string& message, const Client& sender) const
+{
+	(void)sender; // to silence unused parameter warning
+	for (std::map<Client*, bool>::const_iterator it = members.begin(); it != members.end(); ++it)
+	{
+		if (it->first)
+			send(it->first->getFd(), message.c_str(), message.length(), 0);
+	}
 }

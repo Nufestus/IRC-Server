@@ -74,3 +74,20 @@ void Channel::broadcast(const std::string& message, const Client& sender) const
 			send(it->first->getFd(), message.c_str(), message.length(), 0);
 	}
 }
+
+void Channel::inviteClient(Client& target)
+{
+	inviteList.push_back(&target);
+}
+
+void Channel::deinviteClient(Client& target)
+{
+	for (std::vector<Client*>::iterator it = inviteList.begin(); it != inviteList.end(); ++it)
+	{
+		if (*it == &target)
+		{
+			inviteList.erase(it);
+			return;
+		}
+	}
+}

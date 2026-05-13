@@ -260,3 +260,41 @@ void CommandManager::handleJoin(Client& client, const Command& cmd)
         Server::stateSync(client, *channel);
     }
 }
+
+void CommandManager::handleInvite(Client& client, const Command& cmd)
+{
+    if (cmd.getArgs().size() != 2)
+    {
+        server.sendNumeric(client.getFd(), 461, "*", "INVITE :Not enough parameters");
+        return;
+    }
+    std::string targetNick = cmd.getArgs()[0];
+    std::string channelName = cmd.getArgs()[1];
+
+    if (!server.userExists(targetNick)){
+        server.sendNumeric(client.getFd(), 401, targetNick, ":No such nick/channel");
+        return;
+    }
+    if (!server.getChannel(channelName)){
+        server.sendNumeric(client.getFd(), 403, channelName, ":No such channel");
+        return;
+    }
+    if (!client.isInChannel(channelName)){
+        server.sendNumeric(client.getFd(), 442, channelName, ":You're not on that channel");
+        return;
+    }
+    Client* targetClient = server.getClient(targetNick);
+    if (targetClient->isInChannel(channelName)){
+        server.sendNumeric(client.getFd(), 443, targetNick + " " + channelName, ":is already on channel");
+        return;
+    }
+    Channel* channel = server.getChannel(channelName);
+    // 
+    if (channel->isInviteOnly() && !channel->isOperator(client)){
+        server.sendNumeric(client.getFd(), 482, channelName, ":You're not channel operator");
+        return;
+    }
+    channel->inviteClient(*targetClient);
+    server.sendNumeric(client.getFd(), 341, client.getNick(), targetNick + " " + channelName);
+    
+}

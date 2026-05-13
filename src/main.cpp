@@ -126,9 +126,7 @@ int main(int ac, char **av)
                             break;
                         }
                         else
-                        {
                             args.push_back(token);
-                        }
                     }
 
                     for (size_t i = 0; i < args.size(); ++i)

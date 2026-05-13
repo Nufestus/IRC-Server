@@ -59,6 +59,16 @@ void Server::removeClient(uint16_t ClientFd) {this->_users.erase(ClientFd);}
 /* returns a reference to the client with that fd inside the server User map */
 Client& Server::getClient(uint16_t clientFd) {return _users[clientFd];}
 
+Client* Server::getClient(const std::string& nick)
+{
+    for (std::map<uint16_t, Client>::iterator it = this->_users.begin(); it != this->_users.end(); ++it)
+    {
+        if (it->second.getNick() == nick)
+            return &it->second;
+    }
+    throw std::runtime_error("No client with that nickname");
+}
+
 std::map<uint16_t, Client>& Server::getUsers() {return this->_users;}
 
 const std::map<uint16_t, Client>& Server::getUsers() const {return this->_users;}
@@ -135,4 +145,14 @@ void Server::stateSync(Client& client, const Channel& channel){
     sendNumeric(client.getFd(), 353, client.getNick(), ":= " + channel.getName() + " :" + memberList);
     sendNumeric(client.getFd(), 366, client.getNick(), channel.getName() + " :End of NAMES list");
 
+}
+
+bool Server::userExists(const std::string& nick) const
+{
+    for (std::map<uint16_t, Client>::const_iterator it = this->_users.begin(); it != this->_users.end(); ++it)
+    {
+        if (it->second.getNick() == nick)
+            return true;
+    }
+    return false;
 }

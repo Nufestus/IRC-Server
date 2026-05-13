@@ -35,6 +35,7 @@ class Server
         void insertClient(Client user);
         void removeClient(uint16_t clientFd);
         Client& getClient(uint16_t clientFd);
+        Client* getClient(const std::string& nick);
         std::map<uint16_t, Client>& getUsers();
         const std::map<uint16_t, Client>& getUsers() const;
         int getServerFd() const;
@@ -48,6 +49,8 @@ class Server
         const Channel* getChannel(const std::string& channelName) const;
         Channel* getOrCreateChannel(const std::string& channelName, Client* creator);
         static void stateSync(Client& client, const Channel& channel);
+
+        bool userExists(const std::string& nick) const;
 };
 
 #endif

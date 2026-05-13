@@ -36,10 +36,14 @@ class Channel
 		size_t memberCount() const;
 		// Broadcasts a message to all members of the channel except the sender
 		void broadcast(const std::string& message, const Client& sender) const;
+		
+		void inviteClient(Client& target);
+		void deinviteClient(Client& target);
 
 	private:
 		std::string name;
 		std::map<Client*, bool> members;
+		std::vector<Client *> inviteList;
 		bool inviteOnly;
 
 };

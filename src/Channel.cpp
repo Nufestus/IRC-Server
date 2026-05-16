@@ -1,6 +1,7 @@
 #include "../includes/Channel.hpp"
 #include "../includes/Client.hpp"
-#include <sys/socket.h>
+#include "../includes/Command.hpp"
+#include "../includes/Server.hpp"
 
 Channel::Channel() : inviteOnly(false)
 {
@@ -37,7 +38,7 @@ void Channel::removeMember(Client& client)
 	members.erase(&client);
 }
 
-bool Channel::hasMember(const Client& client) const
+bool Channel::isMember(const Client& client) const
 {
 	return members.find(const_cast<Client*>(&client)) != members.end();
 }
@@ -65,12 +66,11 @@ size_t Channel::memberCount() const
 	return members.size();
 }
 
-void Channel::broadcast(const std::string& message, const Client& sender) const
+void Channel::broadcast(const std::string &message, const Client& sender, bool includeSender) const
 {
-	(void)sender; // to silence unused parameter warning
 	for (std::map<Client*, bool>::const_iterator it = members.begin(); it != members.end(); ++it)
 	{
-		if (it->first)
+		if (it->first && (includeSender || it->first != &sender))
 			send(it->first->getFd(), message.c_str(), message.length(), 0);
 	}
 }

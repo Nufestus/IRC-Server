@@ -63,7 +63,7 @@ Client* Server::getClient(const std::string& nick)
 {
     for (std::map<uint16_t, Client>::iterator it = this->_users.begin(); it != this->_users.end(); ++it)
     {
-        if (it->second.getNick() == nick)
+        if (it->second.getNick() == nick)  
             return &it->second;
     }
     return NULL;
@@ -132,7 +132,7 @@ Channel* Server::getOrCreateChannel(const std::string& channelName, Client* crea
     return &result.first->second;
 }
 
-void Server::stateSync(Client& client, const Channel& channel){
+void Server::memberList(Client& client, const Channel& channel){
 
     std::string memberList;
     const std::map<Client*, bool>& members = channel.getClients();
@@ -159,4 +159,38 @@ bool Server::userExists(const std::string& nick) const
             return true;
     }
     return false;
+}
+
+
+void Server::broadcastToSharedChannels(const Client& sender, const std::map<std::string, Channel*>& channelsToLeave, const std::string& message){
+
+    std::set<int> recipients;
+    for (std::map<std::string, Channel*>::const_iterator it = channelsToLeave.begin(); it != channelsToLeave.end(); ++it)
+    {
+        Channel* ch = it->second;
+        if (!ch) continue;
+        const std::map<Client*, bool>& members = ch->getClients();
+        for (std::map<Client*, bool>::const_iterator mit = members.begin(); mit != members.end(); ++mit)
+            recipients.insert(mit->first->getFd());
+    }
+    for (std::set<int>::iterator it = recipients.begin(); it != recipients.end(); ++it)
+        send(*it, message.c_str(), message.size(), 0);
+}
+
+bool Server::channelExists(const std::string& channelName) const
+{
+    return _channels.find(channelName) != _channels.end();
+}
+
+std::vector<std::string> Server::splitCommaSeparated(const std::string& input, bool allowEmpty){
+    std::vector<std::string> result;
+    std::stringstream ss(input);
+    std::string item;
+
+    while (std::getline(ss, item, ','))
+    {
+        if (allowEmpty || !item.empty())
+            result.push_back(item);
+    }
+    return result;
 }

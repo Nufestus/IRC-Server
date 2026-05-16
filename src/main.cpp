@@ -23,7 +23,7 @@ int main(int ac, char **av)
         std::cout << "Epoll woke up! Number of events: " << nfds << std::endl;
         for (int i = 0; i < nfds; i++)
         {
-            std::cout << "Handling event for FD: " << events[i].data.fd << std::endl; // PRINT 2
+            std::cout << "Handling event for FD: " << events[i].data.fd << std::endl;
             if (events[i].data.fd == IRC.getServerFd())
             {
                 struct sockaddr_in client_addr;

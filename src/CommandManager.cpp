@@ -21,6 +21,13 @@ void CommandManager::registerHandlers()
 	_commandMap["INVITE"] = &CommandManager::handleInvite;
 }
 
+std::string CommandManager::stripLeadingColon(const std::string& str)
+{
+    if (!str.empty() && str[0] == ':')
+        return str.substr(1);
+    return str;
+}
+
 void CommandManager::executeCommand(Client& client, const Command& cmd)
 {
     std::string cmdName = cmd.getCmd();
@@ -45,272 +52,18 @@ void CommandManager::executeCommand(Client& client, const Command& cmd)
     (this->*(it->second))(client, cmd);
 }
 
-void CommandManager::handlePass(Client& client, const Command& cmd)
-{
-    std::vector<std::string> args = cmd.getArgs();
-
-    if (args.empty() || args[0].empty())
-    {
-        Server::sendNumeric(client.getFd(), 461, "*", "PASS :Not enough parameters");
-        return;
-    }
-
-    if (args[0] != this->server.getPassword())
-    {
-        Server::sendNumeric(client.getFd(), 464, "*", ":Password incorrect");
-        return;
-    }
-
-    client.setAuthState(Client::AuthState::AwaitNickUser);
-}
-
 void CommandManager::updateRegistration(Client& client)
 {
-    if (client.getAuthState() == Client::AuthState::AwaitNickUser && client.hasNick() && client.hasUser())
-    {
-        client.setAuthState(Client::AuthState::Registered);
-        std::string nick = client.getNick();
-        Server::sendNumeric(client.getFd(), 001, nick, ":Welcome to the Internet Relay Network " + client.getPrefix());
-        Server::sendNumeric(client.getFd(), 002, nick, ":Your host is irc, running version 1.0");
-        Server::sendNumeric(client.getFd(), 003, nick, ":This server was created today");
-        Server::sendNumeric(client.getFd(), 004, nick, "irc 1.0 i o k l");
-    }
-}
-
-bool isValidNickname(const std::string& nickname)
-{
-    if (nickname.empty() || nickname.length() > 9)
-        return false;
-
-    const std::string special = "[]\\`_^{|}";
-    if (!std::isalpha(nickname[0]) && special.find(nickname[0]) == std::string::npos)
-        return false;
-    for (size_t i = 0; i < nickname.length(); ++i)
-    {
-        char c = nickname[i];
-        if (!std::isalnum(c) && special.find(c) == std::string::npos)
-            return false;
-    }
-    return true;
-}
-
-void CommandManager::handleNick(Client& client, const Command& cmd)
-{
-    if (cmd.getArgs().empty() || cmd.getArgs()[0].empty())
-    {
-        Server::sendNumeric(client.getFd(), 431, "*", ":No nickname given");
+    if (client.getAuthState() != Client::AuthState::AwaitNickUser
+        || !client.hasNick()
+        || !client.hasUser())
         return;
-    }
 
-    std::string newNick = cmd.getArgs()[0];
+    client.setAuthState(Client::AuthState::Registered);
 
-    if (client.getNick() == newNick) return;
-
-    for (std::map<uint16_t, Client>::iterator it = this->server.getUsers().begin(); it != this->server.getUsers().end(); ++it)
-    {
-        if (it->second.getNick() == newNick)
-        {
-            Server::sendNumeric(client.getFd(), 433, newNick, ":Nickname is already in use");
-            return;
-        }
-    }
-    if (!isValidNickname(newNick))
-    {
-        Server::sendNumeric(client.getFd(), 432, newNick, ":Erroneus nickname");
-        return;
-    }
-
-    if (client.hasNick() || client.isRegistred())
-    {
-        std::string oldPrefix = client.getNick() + "!" + client.getUser() + "@" + client.getHostname();
-        std::string msg = ":" + oldPrefix + " NICK :" + newNick + "\r\n";
-        
-        // broadcastToSharedChannels(client, msg);
-
-        send(client.getFd(), msg.c_str(), msg.length(), 0);
-    }
-    client.setNick(newNick);
-
-    if (client.getAuthState() == Client::AuthState::AwaitNickUser && client.hasNick() && client.hasUser())
-    {
-        updateRegistration(client);
-    }
-}
-
-void CommandManager::handleUser(Client& client, const Command& cmd)
-{
-    if (cmd.getArgs().size() != 4 || cmd.getArgs()[0].empty() || cmd.getArgs()[3].empty())
-    {
-        Server::sendNumeric(client.getFd(), 461, "*", "USER :Not enough parameters");
-        return;
-    }
-
-    if (client.hasUser() || client.isRegistred())
-    {
-        std::string target = client.hasNick() ? client.getNick() : "*";
-        Server::sendNumeric(client.getFd(), 462, target, ":You have already registered");
-        return;
-    }
-
-    std::string realname = cmd.getArgs()[3];
-    if (!realname.empty() && realname[0] == ':')
-        realname.erase(0, 1);
-    client.setUser(cmd.getArgs()[0], realname);
-    updateRegistration(client);
-}
-
-void CommandManager::handleQuit(Client& client, const Command& cmd)
-{
-    std::string quitReason = cmd.getArgs().empty() ? client.getNick() : cmd.getArgs()[0];
-    std::string broadcastMsg = ":" + client.getNick() + "!" + client.getUser() + "@" + client.getHostname() + " QUIT :" + quitReason + "\r\n";
-    std::string errorMsg = "ERROR :Closing Link: " + client.getHostname() + " (" + quitReason + ")\r\n";
-
-    (void)broadcastMsg;
-    send(client.getFd(), errorMsg.c_str(), errorMsg.length(), 0);
-    if (client.isRegistred())
-    {
-        // broadcastToSharedChannels(client, broadcastMsg);
-    }
-    // Remove client from all channels it belongs to
-    const std::map<std::string, Channel*>& chmap = client.getChannels();
-    std::vector<Channel*> channelsToLeave;
-    for (std::map<std::string, Channel*>::const_iterator it = chmap.begin(); it != chmap.end(); ++it)
-    {
-        if (it->second)
-            channelsToLeave.push_back(it->second);
-    }
-    for (std::vector<Channel*>::iterator it = channelsToLeave.begin(); it != channelsToLeave.end(); ++it)
-    {
-        Channel* ch = *it;
-        if (!ch) continue;
-        ch->removeMember(client);
-        client.removeChannel(ch);
-    }
-
-    client.setShouldDisconnect(true);
-}
-// helper function to split comma-separated lists (for JOIN command)
-std::vector<std::string> splitCommaSeparated(const std::string& input, bool allowEmpty = false){
-    std::vector<std::string> result;
-    std::stringstream ss(input);
-    std::string item;
-
-    while (std::getline(ss, item, ','))
-    {
-        if (allowEmpty || !item.empty())
-            result.push_back(item);
-    }
-    return result;
-}
-
-void CommandManager::handlePrivmsg(Client& client, const Command& cmd)
-{
-    const std::vector<std::string>& args = cmd.getArgs();
-
-    if (args.empty() || (args.size() == 1 && !args[0].empty() && args[0][0] == ':'))
-    {
-        Server::sendNumeric(client.getFd(), 411, client.getNick(), ":No recipient given (PRIVMSG)");
-        return;
-    }
-
-    if (args.size() == 1)
-    {
-        Server::sendNumeric(client.getFd(), 412, client.getNick(), ":No text to send");
-        return;
-    }
-
-    std::vector<std::string> targets = splitCommaSeparated(args[0]);
-    for (std::size_t i = 0; i < targets.size(); ++i)
-    {
-        if (!server.userExists(targets[i]))
-        {
-            Server::sendNumeric(client.getFd(), 401, targets[i], ":No such nick/channel");
-            continue;
-        } else {
-            Client* targetClient = server.getClient(targets[i]);
-            std::string msg = ":" + client.getNick() + " PRIVMSG " + targets[i] + " :" + args[1] + "\r\n";
-            server.sendToClient(targetClient->getFd(), msg);
-        }
-    }
-}
-
-
-void CommandManager::handleJoin(Client& client, const Command& cmd)
-{
-    if (cmd.getArgs().empty())
-    {
-        Server::sendNumeric(client.getFd(), 461, "*", "JOIN :Not enough parameters");
-        return;
-    }
-    std::vector<std::string> channelNames = splitCommaSeparated(cmd.getArgs()[0]);
-    if (cmd.getArgs().size() > 1)
-        std::vector<std::string> keys = splitCommaSeparated(cmd.getArgs()[1], true);
-    for (std::size_t i = 0; i < channelNames.size(); ++i)
-    {
-        std::string& channelName = channelNames[i];
-        if (channelName.empty() || (channelName[0] != '#' && channelName[0] != '&'))
-        {
-            Server::sendNumeric(client.getFd(), 403, channelName, ":No such channel");
-            continue;
-        }
-
-        Channel* channel = server.getOrCreateChannel(channelName, &client);
-
-        if (!channel)
-            continue;
-
-        if (channel->isInviteOnly() && !channel->hasMember(client))
-        {
-            if (!channel->isInvited(client)){
-                Server::sendNumeric(client.getFd(), 473, channelName, ":Cannot join channel (+i)");
-                continue;
-            }
-        }
-        if (!channel->hasMember(client))
-            channel->addMember(client);
-        client.addChannel(channel);
-        if (channel->isInviteOnly())
-            channel->deinviteClient(client);
-        // The Channel Broadcast (The Announcement) : Broadcast to all members of the channel that a new user has joined (including the joining user)
-        // The State Sync (Sent ONLY to the joining user)
-        Server::stateSync(client, *channel);
-    }
-}
-
-void CommandManager::handleInvite(Client& client, const Command& cmd)
-{
-    if (cmd.getArgs().size() != 2)
-    {
-        Server::sendNumeric(client.getFd(), 461, "*", "INVITE :Not enough parameters");
-        return;
-    }
-    std::string targetNick = cmd.getArgs()[0];
-    std::string channelName = cmd.getArgs()[1];
-
-    if (!server.userExists(targetNick)){
-        Server::sendNumeric(client.getFd(), 401, targetNick, ":No such nick/channel");
-        return;
-    }
-    if (!server.getChannel(channelName)){
-        Server::sendNumeric(client.getFd(), 403, channelName, ":No such channel");
-        return;
-    }
-    if (!client.isInChannel(channelName)){
-        Server::sendNumeric(client.getFd(), 442, channelName, ":You're not on that channel");
-        return;
-    }
-    Client* targetClient = server.getClient(targetNick);
-    if (targetClient->isInChannel(channelName)){
-        Server::sendNumeric(client.getFd(), 443, targetNick + " " + channelName, ":is already on channel");
-        return;
-    }
-    Channel* channel = server.getChannel(channelName);
-    if (channel->isInviteOnly() && !channel->isOperator(client)){
-        Server::sendNumeric(client.getFd(), 482, channelName, ":You're not channel operator");
-        return;
-    }
-    channel->inviteClient(*targetClient);
-    Server::sendNumeric(client.getFd(), 341, client.getNick(), targetNick + " " + channelName);
-    std::string inviteMsg = ":" + client.getNick() + " INVITE " + targetNick + " :" + channelName + "\r\n";
-    server.sendToClient(targetClient->getFd(), inviteMsg);
+    const std::string& nick = client.getNick();
+    Server::sendNumeric(client.getFd(), 001, nick, ":Welcome to the Internet Relay Network " + client.getPrefix());
+    Server::sendNumeric(client.getFd(), 002, nick, ":Your host is irc, running version 1.0");
+    Server::sendNumeric(client.getFd(), 003, nick, ":This server was created today");
+    Server::sendNumeric(client.getFd(), 004, nick, "irc 1.0 i o k l");
 }

@@ -1,6 +1,7 @@
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 
+// ─── Includes ────────────────────────────────────────────────────────────
 #include <iostream>
 #include <vector>
 #include <string>
@@ -11,6 +12,7 @@ class Channel;
 class Client
 {
     public:
+        // ─── Enums (AuthState) ───────────────────────────────────────────
         enum class AuthState
         {
             AwaitPass,
@@ -19,26 +21,34 @@ class Client
         };
 
     private:
-        std::string _internalBuffer;
-
+        // ─── Private Members — Identity ─────────────────────────────────
         u_int16_t _fd;
-        std::string _user;
         std::string _nick;
+        std::string _user;
         std::string _realname;
         std::string _hostname;
+
+        // ─── Private Members — State ────────────────────────────────────
         AuthState _authState;
         bool _shouldDisconnect;
+
+        // ─── Private Members — Buffer & Channels ────────────────────────
+        std::string _internalBuffer;
         std::map<std::string, Channel*> _channels;
 
     public:
+        // ─── Public — Constructors & Destructor ─────────────────────────
         Client();
         Client(u_int16_t fd);
+        ~Client();
         
+        // ─── Public — Setters ───────────────────────────────────────────
         void setUser(const std::string& user, const std::string& realname);
         void setNick(std::string nickname);
         void setAuthState(AuthState state);
         void setShouldDisconnect(bool status);
 
+        // ─── Public — Getters — Identity ────────────────────────────────
         u_int16_t getFd() const;
         const std::string& getNick() const;
         const std::string& getUser() const;
@@ -46,6 +56,7 @@ class Client
         const std::string& getHostname() const;
         const std::string getPrefix() const;
 
+        // ─── Public — Getters — State & Flags ───────────────────────────
         bool getShouldDisconnect() const;
         AuthState getAuthState() const;
         bool isRegistred() const;
@@ -53,10 +64,10 @@ class Client
         bool hasNick() const;
         bool hasUser() const;
 
-
+        // ─── Public — Buffer ────────────────────────────────────────────
         std::string& getBuffer();
-        ~Client();
 
+        // ─── Public — Channel Management ────────────────────────────────
         void addChannel(Channel* ch);
         void removeChannel(Channel* ch);
         bool isInChannel(const std::string& name) const;

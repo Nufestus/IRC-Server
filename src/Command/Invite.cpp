@@ -40,7 +40,7 @@ bool CommandManager::validateInvite(Client& client, const std::string& targetNic
         return false;
     }
 
-    if (channel->isInviteOnly() && !channel->isOperator(client))
+    if (channel->isInviteOnly() && !channel->isOperator(client.getFd()))
     {
         Server::sendNumeric(client.getFd(), 482, channelName, ":You're not channel operator");
         return false;
@@ -68,6 +68,6 @@ void CommandManager::handleInvite(Client& client, const Command& cmd)
     Client*  targetClient = server.getClient(targetNick);
     Channel* channel      = server.getChannel(channelName);
 
-    channel->inviteClient(*targetClient);
+    channel->inviteClient(targetClient->getFd());
     notifyInvite(client, *targetClient, channelName);
 }

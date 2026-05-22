@@ -23,17 +23,6 @@ bool CommandManager::isValidNickname(const std::string& nick)
     return true;
 }
 
-bool CommandManager::isNickInUse(const std::string& nick)
-{
-    const std::map<uint16_t, Client>& users = server.getUsers();
-    for (std::map<uint16_t, Client>::const_iterator it = users.begin(); it != users.end(); ++it)
-    {
-        if (it->second.getNick() == nick)
-            return true;
-    }
-    return false;
-}
-
 void CommandManager::notifyNickChange(Client& client, const std::string& newNick)
 {
     if (!client.hasNick() && !client.isRegistred())
@@ -41,7 +30,7 @@ void CommandManager::notifyNickChange(Client& client, const std::string& newNick
 
     const std::string msg = ":" + client.getPrefix() + " NICK :" + newNick + "\r\n";
     server.broadcastToSharedChannels(client, client.getChannels(), msg);
-    send(client.getFd(), msg.c_str(), msg.length(), 0);
+    server.sendToClient(client.getFd(), msg);
 }
 
 
@@ -67,7 +56,7 @@ void CommandManager::handleNick(Client& client, const Command& cmd)
         return;
     }
 
-    if (isNickInUse(newNick))
+    if (server.userExists(newNick))
     {
         Server::sendNumeric(client.getFd(), 433, newNick, ":Nickname is already in use");
         return;

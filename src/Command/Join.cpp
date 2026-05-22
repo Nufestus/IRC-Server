@@ -6,25 +6,25 @@
 void CommandManager::broadcastJoin(Client& client, Channel* channel, const std::string& channelName)
 {
     const std::string message = ":" + client.getPrefix() + " JOIN :" + channelName + "\r\n";
-    channel->broadcast(message, client, true);
+    channel->broadcast(message, client.getFd(), true, server);
     server.memberList(client, *channel);
 }
 
 void CommandManager::addClientToChannel(Client& client, Channel* channel)
 {
-    if (!channel->isMember(client))
-        channel->addMember(client);
+    if (!channel->isMember(client.getFd()))
+        channel->addMember(client.getFd());
 
     if (channel->isInviteOnly())
-        channel->deinviteClient(client);
+        channel->deinviteClient(client.getFd());
 }
 
 bool CommandManager::validateChannelAccess(Client& client, Channel* channel, const std::string& channelName)
 {
-    if (!channel->isInviteOnly() || channel->isMember(client))
+    if (!channel->isInviteOnly() || channel->isMember(client.getFd()))
         return true;
 
-    if (!channel->isInvited(client))
+    if (!channel->isInvited(client.getFd()))
     {
         Server::sendNumeric(client.getFd(), 473, channelName, ":Cannot join channel (+i)");
         return false;

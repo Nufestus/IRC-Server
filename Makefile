@@ -4,7 +4,9 @@ CXX = c++
 
 FLAGS = -Wall -Wextra -Werror
 
-SRCS = src/main.cpp src/Server.cpp src/Client.cpp src/Command.cpp src/CommandManager.cpp src/Channel.cpp src/Command/Privmsg.cpp src/Command/Pass.cpp src/Command/Nick.cpp src/Command/User.cpp src/Command/Quit.cpp src/Command/Join.cpp src/Command/Invite.cpp
+SRCS = src/main.cpp src/Server.cpp src/Client.cpp src/Command.cpp src/CommandManager.cpp src/Channel.cpp \
+		src/Command/Privmsg.cpp src/Command/Pass.cpp src/Command/Nick.cpp src/Command/User.cpp src/Command/Quit.cpp \
+		src/Command/Join.cpp src/Command/Invite.cpp src/Command/Topic.cpp
 
 OBJS = ${SRCS:.cpp=.o}
 

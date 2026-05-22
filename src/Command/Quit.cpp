@@ -18,8 +18,10 @@ void CommandManager::removeClientFromChannels(Client& client, const std::string&
 
     for (std::size_t i = 0; i < toLeave.size(); ++i)
     {
-        toLeave[i]->removeMember(client);
+		toLeave[i]->removeMember(client.getFd());
         client.removeChannel(toLeave[i]);
+        if (toLeave[i]->memberCount() == 0)
+            server.removeChannel(toLeave[i]->getName());
     }
 }
 
@@ -44,7 +46,7 @@ void CommandManager::handleQuit(Client& client, const Command& cmd)
     const std::string broadcastMsg = buildQuitBroadcast(client, quitReason);
     const std::string errorMsg     = buildQuitError(client, quitReason);
 
-    send(client.getFd(), errorMsg.c_str(), errorMsg.length(), 0);
+    server.sendToClient(client.getFd(), errorMsg);
 
     if (client.isRegistred())
         removeClientFromChannels(client, broadcastMsg);

@@ -69,6 +69,14 @@ Client* Server::getClient(const std::string& nick)
     return NULL;
 }
 
+Client* Server::findClient(uint16_t clientFd)
+{
+    std::map<uint16_t, Client>::iterator it = _users.find(clientFd);
+    if (it == _users.end())
+        return NULL;
+    return &it->second;
+}
+
 std::map<uint16_t, Client>& Server::getUsers() {return this->_users;}
 
 const std::map<uint16_t, Client>& Server::getUsers() const {return this->_users;}
@@ -135,14 +143,17 @@ Channel* Server::getOrCreateChannel(const std::string& channelName, Client* crea
 void Server::memberList(Client& client, const Channel& channel){
 
     std::string memberList;
-    const std::map<Client*, bool>& members = channel.getClients();
-    for (std::map<Client*, bool>::const_iterator it = members.begin(); it != members.end(); ++it)
+    const std::map<int, bool>& members = channel.getMembers();
+    for (std::map<int, bool>::const_iterator it = members.begin(); it != members.end(); ++it)
     {
         if (!memberList.empty())
             memberList += " ";
+        Client* member = findClient(it->first);
+        if (!member)
+            continue;
         if (it->second)
             memberList += "@";
-        memberList += it->first->getNick();
+        memberList += member->getNick();
     }
     // The topic (if any) : Send the channel topic to the joining user. If no topic is set, send a numeric reply indicating that there is no topic.
     // The member list : Send the list of current members in the channel to the joining user
@@ -169,9 +180,9 @@ void Server::broadcastToSharedChannels(const Client& sender, const std::map<std:
     {
         Channel* ch = it->second;
         if (!ch) continue;
-        const std::map<Client*, bool>& members = ch->getClients();
-        for (std::map<Client*, bool>::const_iterator mit = members.begin(); mit != members.end(); ++mit)
-            recipients.insert(mit->first->getFd());
+        const std::map<int, bool>& members = ch->getMembers();
+        for (std::map<int, bool>::const_iterator mit = members.begin(); mit != members.end(); ++mit)
+            recipients.insert(mit->first);
     }
     for (std::set<int>::iterator it = recipients.begin(); it != recipients.end(); ++it)
         send(*it, message.c_str(), message.size(), 0);
@@ -193,4 +204,9 @@ std::vector<std::string> Server::splitCommaSeparated(const std::string& input, b
             result.push_back(item);
     }
     return result;
+}
+
+
+void Server::removeChannel(const std::string& channelName){
+    _channels.erase(channelName);
 }

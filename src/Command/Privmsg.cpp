@@ -24,14 +24,14 @@ void CommandManager::sendToChannel(Client& client, const std::string& target, co
 	if (!channel)
 		return;
 
-	if (!channel->isMember(client))
+    if (!channel->isMember(client.getFd()))
 	{
 		Server::sendNumeric(client.getFd(), 404, target, ":Cannot send to channel");
 		return;
 	}
 
 	const std::string msg = buildPrivmsgStr(client.getNick(), target, message);
-	channel->broadcast(msg, client);
+    channel->broadcast(msg, client.getFd(), false, server);
 }
 
 void CommandManager::sendToUser(const Client& client, const std::string& target, const std::string& message)

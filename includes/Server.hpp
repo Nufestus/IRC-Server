@@ -22,50 +22,53 @@
 class Server
 {
     private:
+        // ─── Private Members — Socket & Epoll ───────────────────────────
         int _server_fd;
         int _epoll_fd;
         struct epoll_event _event;
+
+        // ─── Private Members — State ────────────────────────────────────
         std::map<uint16_t, Client> _users;
         std::map<std::string, Channel> _channels;
         std::string _password;
 
     public:
-        // Constructor & Destructor
+        // ─── Public — Constructors & Destructor ─────────────────────────
         Server(uint16_t port, std::string password);
         ~Server();
 
-        // Getters - Server
+        // ─── Public — Getters — Server ──────────────────────────────────
         int getServerFd() const;
         int getEpollFd() const;
         struct epoll_event & getEvent();
         const std::string getPassword() const;
 
-        // Getters - Client
+        // ─── Public — Getters & Management — Clients ────────────────────
         Client& getClient(uint16_t clientFd) ;
          Client* getClient(const std::string& nick) ;
         std::map<uint16_t, Client>& getUsers();
         const std::map<uint16_t, Client>& getUsers() const;
         bool userExists(const std::string& nick) const;
-
-        // Client Management
         void insertClient(Client user);
         void removeClient(uint16_t clientFd);
 
-        // Getters - Channel
+        // ─── Public — Getters & Management — Channels ───────────────────
         Channel* getChannel(const std::string& channelName);
         const Channel* getChannel(const std::string& channelName) const;
         Channel* getOrCreateChannel(const std::string& channelName, Client* creator);
         bool channelExists(const std::string& channelName) const;
+        void removeChannel(const std::string& channelName);
 
-        // Communication & Messaging
+        // ─── Public — Messaging ─────────────────────────────────────────
         static void sendError(int clientFd, std::string Errorcode, std::string message);
         static void sendNumeric(int clientFd, int code, const std::string& targetNick, const std::string& message);
         void sendToClient(int clientFd, const std::string& message);
         void broadcastToSharedChannels(const Client& sender, const std::map<std::string, Channel*>& channelsToLeave, const std::string& message);
 
-        // Utilities
+        // ─── Public — Utilities ─────────────────────────────────────────
         void memberList(Client& client, const Channel& channel);
         std::vector<std::string> splitCommaSeparated(const std::string& input, bool allowEmpty = false);
+        Client* findClient(uint16_t clientFd);
 };
 
 #endif

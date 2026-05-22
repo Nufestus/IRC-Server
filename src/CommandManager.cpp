@@ -19,6 +19,9 @@ void CommandManager::registerHandlers()
 	_commandMap["PRIVMSG"] = &CommandManager::handlePrivmsg;
 	_commandMap["JOIN"] = &CommandManager::handleJoin;
 	_commandMap["INVITE"] = &CommandManager::handleInvite;
+    _commandMap["TOPIC"] = &CommandManager::handleTopic;
+    _commandMap["KICK"] = &CommandManager::handleKick;
+    _commandMap["MODE"] = &CommandManager::handleMode;
 }
 
 std::string CommandManager::stripLeadingColon(const std::string& str)

@@ -7,11 +7,19 @@ Client::Client()
       _shouldDisconnect(false)
 {}
 
-Client::Client(u_int16_t fd) 
+Client::Client(int fd) 
 		: _fd(fd),
 		  _authState(AuthState::AwaitPass),
 		  _shouldDisconnect(false)
 {}
+
+Client::Client(int fd, std::string hostname) 
+		: _fd(fd),
+		  _authState(AuthState::AwaitPass),
+		  _shouldDisconnect(false),
+      _hostname(hostname)
+{}
+
 Client::~Client() {}
 
 
@@ -29,7 +37,7 @@ void Client::setShouldDisconnect(bool status) {_shouldDisconnect = status;}
 
 // Getters
 
-u_int16_t Client::getFd() const {return _fd;}
+int Client::getFd() const {return _fd;}
 
 const std::string& Client::getNick() const {return _nick;}
 
@@ -52,6 +60,8 @@ bool Client::hasUser() const {return !_user.empty();}
 bool Client::getShouldDisconnect() const {return _shouldDisconnect;}
 
 std::string& Client::getBuffer() {return this->_internalBuffer;}
+
+std::string& Client::getSendBuffer() {return this->_sendBuffer;}
 
 const std::string Client::getPrefix() const
 {

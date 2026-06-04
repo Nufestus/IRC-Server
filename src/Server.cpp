@@ -2,7 +2,7 @@
 
 
 /* sets up the port, password and socket for the IRC server */
-Server::Server(uint16_t port, std::string password) : _password(password)
+Server::Server(int port, std::string password) : _password(password)
 {
     struct sockaddr_in address;
 
@@ -54,14 +54,14 @@ struct epoll_event & Server::getEvent() {return this->_event;}
 
 void Server::insertClient(Client user) {this->_users[user.getFd()] = user;}
 
-void Server::removeClient(uint16_t ClientFd) {this->_users.erase(ClientFd);}
+void Server::removeClient(int ClientFd) {this->_users.erase(ClientFd);}
 
 /* returns a reference to the client with that fd inside the server User map */
-Client& Server::getClient(uint16_t clientFd) {return _users[clientFd];}
+Client& Server::getClient(int clientFd) {return _users[clientFd];}
 
 Client* Server::getClient(const std::string& nick)
 {
-    for (std::map<uint16_t, Client>::iterator it = this->_users.begin(); it != this->_users.end(); ++it)
+    for (std::map<int, Client>::iterator it = this->_users.begin(); it != this->_users.end(); ++it)
     {
         if (it->second.getNick() == nick)  
             return &it->second;
@@ -69,9 +69,9 @@ Client* Server::getClient(const std::string& nick)
     return NULL;
 }
 
-std::map<uint16_t, Client>& Server::getUsers() {return this->_users;}
+std::map<int, Client>& Server::getUsers() {return this->_users;}
 
-const std::map<uint16_t, Client>& Server::getUsers() const {return this->_users;}
+const std::map<int, Client>& Server::getUsers() const {return this->_users;}
 
 const std::string Server::getPassword() const {return this->_password;}
 
@@ -153,7 +153,7 @@ void Server::memberList(Client& client, const Channel& channel){
 
 bool Server::userExists(const std::string& nick) const
 {
-    for (std::map<uint16_t, Client>::const_iterator it = this->_users.begin(); it != this->_users.end(); ++it)
+    for (std::map<int, Client>::const_iterator it = this->_users.begin(); it != this->_users.end(); ++it)
     {
         if (it->second.getNick() == nick)
             return true;

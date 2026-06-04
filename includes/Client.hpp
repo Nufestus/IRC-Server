@@ -20,8 +20,9 @@ class Client
 
     private:
         std::string _internalBuffer;
+        std::string _sendBuffer;
 
-        u_int16_t _fd;
+        int _fd;
         std::string _user;
         std::string _nick;
         std::string _realname;
@@ -32,14 +33,15 @@ class Client
 
     public:
         Client();
-        Client(u_int16_t fd);
+        Client(int fd);
+        Client(int fd, std::string hostname);
         
         void setUser(const std::string& user, const std::string& realname);
         void setNick(std::string nickname);
         void setAuthState(AuthState state);
         void setShouldDisconnect(bool status);
 
-        u_int16_t getFd() const;
+        int getFd() const;
         const std::string& getNick() const;
         const std::string& getUser() const;
         const std::string& getRealname() const;
@@ -55,6 +57,7 @@ class Client
 
 
         std::string& getBuffer();
+        std::string& getSendBuffer();
         ~Client();
 
         void addChannel(Channel* ch);

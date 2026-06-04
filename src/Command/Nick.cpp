@@ -25,8 +25,8 @@ bool CommandManager::isValidNickname(const std::string& nick)
 
 bool CommandManager::isNickInUse(const std::string& nick)
 {
-    const std::map<uint16_t, Client>& users = server.getUsers();
-    for (std::map<uint16_t, Client>::const_iterator it = users.begin(); it != users.end(); ++it)
+    const std::map<int, Client>& users = server.getUsers();
+    for (std::map<int, Client>::const_iterator it = users.begin(); it != users.end(); ++it)
     {
         if (it->second.getNick() == nick)
             return true;

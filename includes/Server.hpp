@@ -5,6 +5,7 @@
 #include <set>
 #include <map>
 #include <string>
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/epoll.h>
 #include <unistd.h>
@@ -25,13 +26,13 @@ class Server
         int _server_fd;
         int _epoll_fd;
         struct epoll_event _event;
-        std::map<uint16_t, Client> _users;
+        std::map<int, Client> _users;
         std::map<std::string, Channel> _channels;
         std::string _password;
 
     public:
         // Constructor & Destructor
-        Server(uint16_t port, std::string password);
+        Server(int port, std::string password);
         ~Server();
 
         // Getters - Server
@@ -41,15 +42,15 @@ class Server
         const std::string getPassword() const;
 
         // Getters - Client
-        Client& getClient(uint16_t clientFd) ;
+        Client& getClient(int clientFd) ;
          Client* getClient(const std::string& nick) ;
-        std::map<uint16_t, Client>& getUsers();
-        const std::map<uint16_t, Client>& getUsers() const;
+        std::map<int, Client>& getUsers();
+        const std::map<int, Client>& getUsers() const;
         bool userExists(const std::string& nick) const;
 
         // Client Management
         void insertClient(Client user);
-        void removeClient(uint16_t clientFd);
+        void removeClient(int clientFd);
 
         // Getters - Channel
         Channel* getChannel(const std::string& channelName);

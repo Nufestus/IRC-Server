@@ -29,6 +29,7 @@ class CommandManager
 		void handleQuit(Client& client, const Command&);
 		void handleJoin(Client& client, const Command&);
 		void handleInvite(Client& client, const Command&);
+		void handleBot(Client& client, const Command&);
         
 		std::map<std::string, CommandHandler> _commandMap;
 

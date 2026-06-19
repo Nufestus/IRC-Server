@@ -29,8 +29,10 @@ void acceptNewConnection(Server &IRC)
     std::cout << "NEW CONNECTION: FD " << client_fd << std::endl;
     
     int flags = fcntl(client_fd, F_GETFL, 0);
-    if (flags == -1) perror("fcntl F_GETFL");
-    if (fcntl(client_fd, F_SETFL, flags | O_NONBLOCK) == -1) perror("fcntl F_SETFL");
+    if (flags == -1)
+        perror("fcntl F_GETFL");
+    if (fcntl(client_fd, F_SETFL, flags | O_NONBLOCK) == -1)
+        perror("fcntl F_SETFL");
     
     struct epoll_event ev;
     ev.events = EPOLLIN;
@@ -82,6 +84,10 @@ void processCommands(Server &IRC, CommandManager &cmdManager, Client &user, int 
 
         Command Commandline(cmd, args, IRC.getClient(client_fd));
 
+        std::cout << "[SERVER] Executing: " << cmd << " | Args count: " << args.size() << std::endl;
+for (size_t i = 0; i < args.size(); i++) {
+    std::cout << "   -> arg[" << i << "]: '" << args[i] << "'" << std::endl;
+}
         cmdManager.executeCommand(user, Commandline);
     }
 }
@@ -141,7 +147,6 @@ void handleClientWrite(Server &IRC, int client_fd)
         }
     }
 
-    // Switch back to waiting for READ events once the buffer is empty
     if (outBuffer.empty()) 
     {
         struct epoll_event ev;

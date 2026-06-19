@@ -1,6 +1,5 @@
 #include "../includes/Server.hpp"
 
-
 /* sets up the port, password and socket for the IRC server */
 Server::Server(int port, std::string password) : _password(password)
 {

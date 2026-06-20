@@ -3,11 +3,11 @@
 #include "../includes/Command.hpp"
 #include "../includes/Server.hpp"
 
-Channel::Channel() : inviteOnly(false)
+Channel::Channel() : operatorCount(0), inviteOnly(false)
 {
 }
 
-Channel::Channel(const std::string& name, Client& creator) : name(name), inviteOnly(false)
+Channel::Channel(const std::string& name, Client& creator) : name(name), operatorCount(0), inviteOnly(false)
 {
 	members[creator.getFd()] = true;
 }
@@ -136,4 +136,36 @@ bool Channel::hasLimit() const{
 
 void Channel::setLimited(bool status){
 	limited = status;
+}
+
+void Channel::setChannelProtected(bool status){
+	protectedChannel = status;
+}
+
+bool Channel::hasKey() const{
+	return protectedChannel;
+}
+
+void Channel::setKey(std::string key){
+	channelKey = key;
+}
+
+const std::string& Channel::getKey() const{
+	return channelKey;
+}
+
+void Channel::addOperator(int fd){
+	if (members[fd] == true) return;
+	members[fd] = true;
+	operatorCount++;
+}
+
+void Channel::removeOperator(int fd){
+	if (!members[fd]) return;
+	members[fd] = false;
+	operatorCount--;
+}
+
+std::size_t Channel::getOperatorCount() const{
+	return operatorCount;
 }

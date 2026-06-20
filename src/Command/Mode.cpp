@@ -12,12 +12,13 @@ bool flagTakeParams(char flag, bool adding){
 }
 
 std::vector<ModeChange>& parseModeString(const std::vector<std::string> args){
-	
+
+	std::vector<ModeChange> changes;
+	if (args.size() < 2) return changes;
 	
 	const std::string& flags = args[1];
 	int paramsIndx = 2;
 	bool adding = true;
-	std::vector<ModeChange> changes;
 	
 	for (std::size_t i = 0; i < flags.size(); ++i){
 
@@ -33,8 +34,10 @@ std::vector<ModeChange>& parseModeString(const std::vector<std::string> args){
 		ModeChange change;
 		change.add = adding;
 		change.flag = c;
-		if (flagTakeParams(c, adding) && paramsIndx < args.size())
+		if (flagTakeParams(c, adding) ){
+			if (paramsIndx >= args.size()) continue;
 			change.params = args[paramsIndx++];
+		}
 		changes.push_back(change);
 	}
 	return changes;
@@ -50,11 +53,30 @@ void applyModeTopic(Channel* channel, Client& client, bool add){
 }
 void applyModeLimit(Channel* channel, Client& client, const ModeChange change){
 	
-	if (!change.add && channel.limited)
+	if (!change.add && channel->hasLimit())
+		channel->setLimited(false);
+	else if (change.add){
+		if (!channel->hasLimit())
+			channel->setLimited(true);
+		std::stringstream ss(change.params);
+		std::size_t userLimit;
+		ss >> userLimit;
+		channel->setUserLimit(userLimit);
+	}
 		
 }
-void applyModeKey(Channel* channel, Client& client){}
-void applyModeOperator(Channel* channel, Client& client){}
+void applyModeKey(Channel* channel, Client& client, const ModeChange change){
+	if (change.add){
+		if (channel->hasKey() && channel->getKey() == change.params){
+			channel->setChannelProtected(false);
+			channel->setKey("");
+		}
+	} else {
+		channel->setChannelProtected(true);
+		channel->setKey(change.params);
+	}
+}
+void applyModeOperator(Channel* channel, Client& client, const ModeChange change){}
 
 void applyChanges(Channel* channel, Client& client, const std::vector<ModeChange>& changes){
 
@@ -65,10 +87,10 @@ void applyChanges(Channel* channel, Client& client, const std::vector<ModeChange
 				applyModeInvite(channel, client, change.add);
 				break;
 			case 'k' :
-				applyModeKey(channel, client);
+				applyModeKey(channel, client, change);
 				break;
 			case 'o' :
-				applyModeOperator(channel, client);
+				applyModeOperator(channel, client, change);
 				break;
 			case 'l' :
 				applyModeLimit(channel, client, change);

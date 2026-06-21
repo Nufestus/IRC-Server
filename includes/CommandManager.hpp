@@ -52,7 +52,7 @@ class CommandManager
 		bool validateUserArgs(Client& client, const std::vector<std::string>& args);
 		bool validateUserNotRegistered(Client& client);
 		bool validateChannelName(Client& client, const std::string& channelName);
-		bool validateChannelAccess(Client& client, Channel* channel, const std::string& channelName);
+		bool validateChannelAccess(Client& client, Channel* channel, const std::string& channelName, const std::string& key);
 		bool validateInvite(Client& client, const std::string& targetNick, const std::string& channelName);
 		bool isChannelTarget(const std::string& target);
 		bool validateTopicArgs(Client& client, const std::vector<std::string>& args);

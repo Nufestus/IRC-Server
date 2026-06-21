@@ -51,6 +51,7 @@ class Server
         bool userExists(const std::string& nick) const;
         void insertClient(Client user);
         void removeClient(uint16_t clientFd);
+        int getFdByNick(std::string &nick);
 
         // ─── Public — Getters & Management — Channels ───────────────────
         Channel* getChannel(const std::string& channelName);

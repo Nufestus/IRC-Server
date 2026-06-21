@@ -210,3 +210,12 @@ std::vector<std::string> Server::splitCommaSeparated(const std::string& input, b
 void Server::removeChannel(const std::string& channelName){
     _channels.erase(channelName);
 }
+
+int Server::getFdByNick(std::string &nick){
+    for (std::map<uint16_t, Client>::iterator it = this->_users.begin(); it != this->_users.end(); ++it)
+    {
+        if (it->second.getNick() == nick)
+            return it->first;
+    }
+    return -1;
+}

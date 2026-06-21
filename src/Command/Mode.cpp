@@ -11,7 +11,7 @@ bool flagTakeParams(char flag, bool adding){
 	return false;
 }
 
-std::vector<ModeChange>& parseModeString(const std::vector<std::string> args){
+std::vector<ModeChange> parseModeString(const std::vector<std::string>& args){
 
 	std::vector<ModeChange> changes;
 	if (args.size() < 2) return changes;
@@ -66,7 +66,7 @@ void applyModeLimit(Channel* channel, Client& client, const ModeChange change){
 		
 }
 void applyModeKey(Channel* channel, Client& client, const ModeChange change){
-	if (change.add){
+	if (!change.add){
 		if (channel->hasKey() && channel->getKey() == change.params){
 			channel->setChannelProtected(false);
 			channel->setKey("");
@@ -76,9 +76,27 @@ void applyModeKey(Channel* channel, Client& client, const ModeChange change){
 		channel->setKey(change.params);
 	}
 }
-void applyModeOperator(Channel* channel, Client& client, const ModeChange change){}
+void applyModeOperator(Channel* channel, Client& client, const ModeChange change, Server& server){
 
-void applyChanges(Channel* channel, Client& client, const std::vector<ModeChange>& changes){
+	std::string targetNick = change.params;
+	int targetFd = server.getFdByNick(targetNick);
+	if (targetFd == -1)
+	{
+		Server::sendNumeric(client.getFd(), 401, client.getNick(), targetNick + " :No such nick");
+		return;
+	}
+
+	if (!channel->isMember(targetFd)){
+		Server::sendNumeric(client.getFd(), 441, client.getNick(), targetNick + " " + channel->getName() + " :They are not on that channel");
+		return;
+	}
+	if (change.add)
+		channel->addOperator(targetFd);
+	else
+		channel->removeOperator(targetFd);
+}
+
+void applyChanges(Channel* channel, Client& client, const std::vector<ModeChange>& changes, Server& server){
 
 	for (std::size_t i = 0; i < changes.size(); ++i){
 		const ModeChange change = changes[i];
@@ -90,15 +108,16 @@ void applyChanges(Channel* channel, Client& client, const std::vector<ModeChange
 				applyModeKey(channel, client, change);
 				break;
 			case 'o' :
-				applyModeOperator(channel, client, change);
+				applyModeOperator(channel, client, change, server);
 				break;
 			case 'l' :
 				applyModeLimit(channel, client, change);
 				break;
 			case 't' :
 				applyModeTopic(channel, client, change.add);
+				break;
 			default :
-				Server::sendNumeric(client.getFd(), 472, client.getNick(), change.flag + " :is unknown mode char");
+				Server::sendNumeric(client.getFd(), 472, client.getNick(), std::string(1, change.flag) + " :is unknown mode char");				
 		}
 	}
 }
@@ -129,5 +148,5 @@ void CommandManager::handleMode(Client& client, const Command& cmd){
 		return ;
 	}
 	const std::vector<ModeChange> changes = parseModeString(cmd.getArgs());
-	applyChanges(channel, client, changes);
+	applyChanges(channel, client, changes, server);
 }

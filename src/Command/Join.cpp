@@ -19,7 +19,7 @@ void CommandManager::addClientToChannel(Client& client, Channel* channel)
         channel->deinviteClient(client.getFd());
 }
 
-bool CommandManager::validateChannelAccess(Client& client, Channel* channel, const std::string& channelName)
+bool CommandManager::validateChannelAccess(Client& client, Channel* channel, const std::string& channelName, const std::string& key)
 {
     if (!channel->isInviteOnly() || channel->isMember(client.getFd()))
         return true;
@@ -29,6 +29,19 @@ bool CommandManager::validateChannelAccess(Client& client, Channel* channel, con
         Server::sendNumeric(client.getFd(), 473, channelName, ":Cannot join channel (+i)");
         return false;
     }
+
+    if (channel->hasKey() && channel->getKey() != key)
+    {
+        Server::sendNumeric(client.getFd(), 475, channelName, ":Cannot join channel (+k)");
+        return false;
+    }
+
+    if (channel->hasLimit() && channel->memberCount() >= channel->getLimit())
+    {
+        Server::sendNumeric(client.getFd(), 471, channelName, ":Cannot join channel (+l)");
+        return false;
+    }
+
     return true;
 }
 
@@ -50,7 +63,7 @@ void CommandManager::joinChannel(Client& client, const std::string& channelName,
     if (!channel)
         return;
 
-    if (!validateChannelAccess(client, channel, channelName))
+    if (!validateChannelAccess(client, channel, channelName, key))
         return;
 
     addClientToChannel(client, channel);

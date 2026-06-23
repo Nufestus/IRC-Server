@@ -15,6 +15,7 @@
 #include <iomanip>
 #include "Client.hpp"
 #include "CommandManager.hpp"
+#include "Command.hpp"
 #include "Channel.hpp"
 
 #define MAX_EVENTS 1024
@@ -32,6 +33,9 @@ class Server
         std::map<std::string, Channel> _channels;
         std::string _password;
 
+        // ─── Private Members — State ────────────────────────────────────
+        CommandManager cmdManager;
+
     public:
         // ─── Public — Constructors & Destructor ─────────────────────────
         Server(uint16_t port, std::string password);
@@ -42,6 +46,7 @@ class Server
         int getEpollFd() const;
         struct epoll_event & getEvent();
         const std::string getPassword() const;
+        CommandManager& getComandManager();
 
         // ─── Public — Getters & Management — Clients ────────────────────
         Client& getClient(uint16_t clientFd) ;
@@ -61,15 +66,18 @@ class Server
         void removeChannel(const std::string& channelName);
 
         // ─── Public — Messaging ─────────────────────────────────────────
-        static void sendError(int clientFd, std::string Errorcode, std::string message);
-        static void sendNumeric(int clientFd, int code, const std::string& targetNick, const std::string& message);
+        void sendError(int clientFd, std::string Errorcode, std::string message);
+        void sendNumeric(int clientFd, int code, const std::string& targetNick, const std::string& message);
         void sendToClient(int clientFd, const std::string& message);
         void broadcastToSharedChannels(const Client& sender, const std::map<std::string, Channel*>& channelsToLeave, const std::string& message);
+        void notifyClientQuit(Client& client, const std::string& reason, bool includeSender);
 
         // ─── Public — Utilities ─────────────────────────────────────────
         void memberList(Client& client, const Channel& channel);
         std::vector<std::string> splitCommaSeparated(const std::string& input, bool allowEmpty = false);
         Client* findClient(uint16_t clientFd);
+        void handleRequest(Client& client, const Command& cmd);
+        void flushClient(int clienFd);
 };
 
 #endif

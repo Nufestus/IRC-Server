@@ -39,6 +39,7 @@ const std::string& Client::getRealname() const {return _realname;}
 
 const std::string& Client::getHostname() const {return _hostname;}
 
+
 Client::AuthState Client::getAuthState() const {return _authState;}
 
 bool Client::isRegistred() const {return _authState == AuthState::Registered;}
@@ -52,6 +53,10 @@ bool Client::hasUser() const {return !_user.empty();}
 bool Client::getShouldDisconnect() const {return _shouldDisconnect;}
 
 std::string& Client::getBuffer() {return this->_internalBuffer;}
+
+std::string& Client::getOutBuffer() {return _outBuffer;}
+
+bool Client::hasPendingOutput() const {return !_outBuffer.empty();}
 
 const std::string Client::getPrefix() const
 {

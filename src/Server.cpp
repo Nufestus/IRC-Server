@@ -2,7 +2,7 @@
 
 
 /* sets up the port, password and socket for the IRC server */
-Server::Server(uint16_t port, std::string password) : _password(password)
+Server::Server(uint16_t port, std::string password) : _password(password) , cmdManager(*this)
 {
     struct sockaddr_in address;
 
@@ -101,7 +101,7 @@ const Channel* Server::getChannel(const std::string& channelName) const
 
 void Server::sendError(int clientFd, std::string errorCode, std::string message) {
     std::string response = ":irc " + errorCode + " " + message + "\r\n";
-    send(clientFd, response.c_str(), response.size(), 0);
+    sendToClient(clientFd, response);
 }
 
 void Server::sendNumeric(int clientFd, int code, const std::string& targetNick, const std::string& message) {
@@ -118,11 +118,58 @@ void Server::sendNumeric(int clientFd, int code, const std::string& targetNick, 
     }
     
     std::string response = oss.str() + "\r\n";
-    send(clientFd, response.c_str(), response.size(), 0);
+    sendToClient(clientFd, response);
 }
 
 void Server::sendToClient(int clientFd, const std::string& message) {
-    send(clientFd, message.c_str(), message.size(), 0);
+    Client* client = findClient(clientFd);
+    if (!client)
+        return ;
+    client->getOutBuffer() += message;
+    flushClient(clientFd);
+}
+
+void Server::notifyClientQuit(Client& client, const std::string& reason, bool includeSender)
+{
+    if (!client.isRegistred())
+        return;
+
+    const std::string quitMessage = ":" + client.getPrefix() + " QUIT :" + reason + "\r\n";
+    const std::map<std::string, Channel*>& channels = client.getChannels();
+    std::set<int> recipients;
+
+    for (std::map<std::string, Channel*>::const_iterator it = channels.begin(); it != channels.end(); ++it)
+    {
+        Channel* channel = it->second;
+        if (!channel)
+            continue;
+
+        const std::map<int, bool>& members = channel->getMembers();
+        for (std::map<int, bool>::const_iterator mit = members.begin(); mit != members.end(); ++mit)
+        {
+            if (!includeSender && mit->first == client.getFd())
+                continue;
+            recipients.insert(mit->first);
+        }
+    }
+
+    for (std::set<int>::iterator it = recipients.begin(); it != recipients.end(); ++it)
+        sendToClient(*it, quitMessage);
+
+    std::vector<Channel*> toLeave;
+    for (std::map<std::string, Channel*>::const_iterator it = channels.begin(); it != channels.end(); ++it)
+    {
+        if (it->second)
+            toLeave.push_back(it->second);
+    }
+
+    for (std::size_t i = 0; i < toLeave.size(); ++i)
+    {
+        toLeave[i]->removeMember(client.getFd());
+        client.removeChannel(toLeave[i]);
+        if (toLeave[i]->memberCount() == 0)
+            removeChannel(toLeave[i]->getName());
+    }
 }
 
 
@@ -173,20 +220,20 @@ bool Server::userExists(const std::string& nick) const
 }
 
 
-void Server::broadcastToSharedChannels(const Client& sender, const std::map<std::string, Channel*>& channelsToLeave, const std::string& message){
+// void Server::broadcastToSharedChannels(const Client& sender, const std::map<std::string, Channel*>& channelsToLeave, const std::string& message){
 
-    std::set<int> recipients;
-    for (std::map<std::string, Channel*>::const_iterator it = channelsToLeave.begin(); it != channelsToLeave.end(); ++it)
-    {
-        Channel* ch = it->second;
-        if (!ch) continue;
-        const std::map<int, bool>& members = ch->getMembers();
-        for (std::map<int, bool>::const_iterator mit = members.begin(); mit != members.end(); ++mit)
-            recipients.insert(mit->first);
-    }
-    for (std::set<int>::iterator it = recipients.begin(); it != recipients.end(); ++it)
-        send(*it, message.c_str(), message.size(), 0);
-}
+//     std::set<int> recipients;
+//     for (std::map<std::string, Channel*>::const_iterator it = channelsToLeave.begin(); it != channelsToLeave.end(); ++it)
+//     {
+//         Channel* ch = it->second;
+//         if (!ch) continue;
+//         const std::map<int, bool>& members = ch->getMembers();
+//         for (std::map<int, bool>::const_iterator mit = members.begin(); mit != members.end(); ++mit)
+//             recipients.insert(mit->first);
+//     }
+//     for (std::set<int>::iterator it = recipients.begin(); it != recipients.end(); ++it)
+//         sendToClient(*it, message);
+// }
 
 bool Server::channelExists(const std::string& channelName) const
 {
@@ -218,4 +265,42 @@ int Server::getFdByNick(std::string &nick){
             return it->first;
     }
     return -1;
+}
+
+CommandManager& Server::getComandManager(){
+    return cmdManager;
+}
+
+void Server::handleRequest(Client& client, const Command& cmd){
+    cmdManager.executeCommand(client, cmd);
+}
+
+void Server::flushClient(int clientFd){
+    Client* client = findClient(clientFd);
+    if (!client)
+        return;
+
+    std::string& buf = client->getOutBuffer();
+    if (buf.empty())
+        return;
+
+    ssize_t sent = send(clientFd, buf.c_str(), buf.size(), 0);
+
+    if (sent > 0)
+        buf.erase(0, static_cast<std::size_t>(sent));
+    else if (sent < 0 && errno != EAGAIN && errno != EWOULDBLOCK)
+    {
+        // real send error — notify channel peers and disconnect client
+        notifyClientQuit(*client, "Client exited", false);
+        epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, clientFd, NULL);
+        close(clientFd);
+        removeClient(clientFd);
+        return;
+    }
+    // sent == 0, or EAGAIN: nothing more to do right now, just adjust epoll below
+
+    struct epoll_event ev;
+    ev.data.fd = clientFd;
+    ev.events = buf.empty() ? EPOLLIN : (EPOLLIN | EPOLLOUT);
+    epoll_ctl(_epoll_fd, EPOLL_CTL_MOD, clientFd, &ev);
 }

@@ -12,7 +12,6 @@ int main(int ac, char **av)
     }
 
     Server IRC(std::atoi(av[1]), av[2]);
-    CommandManager cmdManager(IRC);
     if (listen(IRC.getServerFd(), 1024) == -1)
         return (perror("listen"), errno);
 
@@ -23,8 +22,10 @@ int main(int ac, char **av)
         std::cout << "Epoll woke up! Number of events: " << nfds << std::endl;
         for (int i = 0; i < nfds; i++)
         {
-            std::cout << "Handling event for FD: " << events[i].data.fd << std::endl;
-            if (events[i].data.fd == IRC.getServerFd())
+            int fd = events[i].data.fd;
+            std::cout << "Handling event for FD: " << fd << std::endl;
+
+            if (fd == IRC.getServerFd())
             {
                 struct sockaddr_in client_addr;
                 socklen_t addr_len = sizeof(client_addr);
@@ -59,15 +60,34 @@ int main(int ac, char **av)
                     perror("accept");
                     return errno;
                 }
+                continue; // server fd never needs EPOLLIN/EPOLLOUT data handling below
             }
-            else
+
+            // ── Check for disconnect/error flags first ──────────────────
+            if (events[i].events & (EPOLLHUP | EPOLLERR))
+            {
+                std::cout << "user fd " << fd << " hung up / error" << std::endl;
+                epoll_ctl(IRC.getEpollFd(), EPOLL_CTL_DEL, fd, NULL);
+                close(fd);
+                IRC.removeClient(fd);
+                continue;
+            }
+
+            // ── Writable: flush any buffered outbound data ──────────────
+            if (events[i].events & EPOLLOUT)
+            {
+                IRC.flushClient(fd);
+            }
+
+            // ── Readable: receive and parse ──────────────────────────────
+            if (events[i].events & EPOLLIN)
             {
                 char readBuf[1024];
-                int client_fd = events[i].data.fd;
+                int client_fd = fd;
                 Client& user = IRC.getClient(client_fd);
 
                 int bytes = recv(client_fd, readBuf, sizeof(readBuf) - 1, 0);
-                std::cout << "Recv called. Bytes received: " << bytes << std::endl; // PRINT 3
+                std::cout << "Recv called. Bytes received: " << bytes << std::endl;
                 if (bytes > 0)
                 {
                     readBuf[bytes] = '\0';
@@ -78,7 +98,7 @@ int main(int ac, char **av)
                     if (errno == EAGAIN || errno == EWOULDBLOCK)
                         continue;
                     perror("recv");
-                    epoll_ctl(IRC.getEpollFd(), EPOLL_CTL_DEL, client_fd, &events[i]);
+                    epoll_ctl(IRC.getEpollFd(), EPOLL_CTL_DEL, client_fd, NULL);
                     close(client_fd);
                     IRC.removeClient(client_fd);
                     continue;
@@ -86,15 +106,15 @@ int main(int ac, char **av)
                 else
                 {
                     std::cout << "user fd " << client_fd << " disconnected" << std::endl;
-                    epoll_ctl(IRC.getEpollFd(), EPOLL_CTL_DEL, client_fd, &events[i]);
+                    epoll_ctl(IRC.getEpollFd(), EPOLL_CTL_DEL, client_fd, NULL);
                     close(client_fd);
                     IRC.removeClient(client_fd);
                     continue;
                 }
 
                 if (user.getBuffer().size() > 512) {
-                    Server::sendError(client_fd, "417", "Input line too long");
-                    epoll_ctl(IRC.getEpollFd(), EPOLL_CTL_DEL, client_fd, &events[i]);
+                    IRC.sendError(client_fd, "417", "Input line too long");
+                    epoll_ctl(IRC.getEpollFd(), EPOLL_CTL_DEL, client_fd, NULL);
                     close(client_fd);
                     IRC.removeClient(client_fd);
                     continue;
@@ -129,21 +149,28 @@ int main(int ac, char **av)
                             args.push_back(token);
                     }
 
-                    for (size_t i = 0; i < args.size(); ++i)
+                    for (size_t j = 0; j < args.size(); ++j)
                     {
-                        std::cout << "Arg " << i << ": " << args[i] << std::endl;
+                        std::cout << "Arg " << j << ": " << args[j] << std::endl;
                     }
 
                     Command Commandline(cmd, args, IRC.getClient(client_fd));
 
                     try {
-                        cmdManager.executeCommand(user, Commandline);
+                        IRC.handleRequest(user, Commandline);
+
+                        if (user.getShouldDisconnect())
+                        {
+                            epoll_ctl(IRC.getEpollFd(), EPOLL_CTL_DEL, client_fd, NULL);
+                            close(client_fd);
+                            IRC.removeClient(client_fd);
+                            continue;
+                        }
                     } catch (std::exception &e) {
 
                     }
                 }
             }
         }
-
     }
 }

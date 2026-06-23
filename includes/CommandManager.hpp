@@ -2,7 +2,7 @@
 #ifndef COMMANDMANAGER_HPP
 #define COMMANDMANAGER_HPP
 
-#include "Server.hpp"
+// #include "Server.hpp"
 #include "Client.hpp"
 #include "Command.hpp"
 

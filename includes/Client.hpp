@@ -34,6 +34,7 @@ class Client
 
         // ─── Private Members — Buffer & Channels ────────────────────────
         std::string _internalBuffer;
+        std::string _outBuffer;
         std::map<std::string, Channel*> _channels;
 
     public:
@@ -55,7 +56,7 @@ class Client
         const std::string& getRealname() const;
         const std::string& getHostname() const;
         const std::string getPrefix() const;
-
+        
         // ─── Public — Getters — State & Flags ───────────────────────────
         bool getShouldDisconnect() const;
         AuthState getAuthState() const;
@@ -63,9 +64,11 @@ class Client
         bool isPassOk() const;
         bool hasNick() const;
         bool hasUser() const;
-
+        
         // ─── Public — Buffer ────────────────────────────────────────────
         std::string& getBuffer();
+        std::string& getOutBuffer();
+        bool hasPendingOutput() const;
 
         // ─── Public — Channel Management ────────────────────────────────
         void addChannel(Channel* ch);

@@ -16,7 +16,7 @@ void CommandManager::sendToChannel(Client& client, const std::string& target, co
 {
 	if (!server.channelExists(target))
 	{
-		Server::sendNumeric(client.getFd(), 403, target, ":No such channel");
+		server.sendNumeric(client.getFd(), 403, target, ":No such channel");
 		return;
 	}
 
@@ -26,7 +26,7 @@ void CommandManager::sendToChannel(Client& client, const std::string& target, co
 
     if (!channel->isMember(client.getFd()))
 	{
-		Server::sendNumeric(client.getFd(), 404, target, ":Cannot send to channel");
+		server.sendNumeric(client.getFd(), 404, target, ":Cannot send to channel");
 		return;
 	}
 
@@ -39,7 +39,7 @@ void CommandManager::sendToUser(const Client& client, const std::string& target,
 
 	if (!server.userExists(target))
 	{
-		Server::sendNumeric(client.getFd(), 401, target, ":No such nick/channel");
+		server.sendNumeric(client.getFd(), 401, target, ":No such nick/channel");
 		return;
 	}
 
@@ -58,13 +58,13 @@ bool CommandManager::validatePrivmsgArgs(const Client& client, const std::vector
     bool noRecipient = args.empty() || (args.size() == 1 && !args[0].empty() && args[0][0] == ':');
     if (noRecipient)
     {
-        Server::sendNumeric(client.getFd(), 411, client.getNick(), ":No recipient given (PRIVMSG)");
+        server.sendNumeric(client.getFd(), 411, client.getNick(), ":No recipient given (PRIVMSG)");
         return false;
     }
 
     if (args.size() == 1)
     {
-        Server::sendNumeric(client.getFd(), 412, client.getNick(), ":No text to send");
+        server.sendNumeric(client.getFd(), 412, client.getNick(), ":No text to send");
         return false;
     }
 
@@ -75,7 +75,7 @@ void CommandManager::sendToTarget(Client& client, const std::string& target, con
 {
     if (target.empty())
     {
-        Server::sendNumeric(client.getFd(), 411, client.getNick(), ":No recipient given (PRIVMSG)");
+        server.sendNumeric(client.getFd(), 411, client.getNick(), ":No recipient given (PRIVMSG)");
         return;
     }
 

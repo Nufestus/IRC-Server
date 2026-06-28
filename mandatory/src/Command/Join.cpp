@@ -26,19 +26,19 @@ bool CommandManager::validateChannelAccess(Client& client, Channel* channel, con
 
     if (!channel->isInvited(client.getFd()))
     {
-        Server::sendNumeric(client.getFd(), 473, channelName, ":Cannot join channel (+i)");
+        server.sendNumeric(client.getFd(), 473, channelName, ":Cannot join channel (+i)");
         return false;
     }
 
     if (channel->hasKey() && channel->getKey() != key)
     {
-        Server::sendNumeric(client.getFd(), 475, channelName, ":Cannot join channel (+k)");
+        server.sendNumeric(client.getFd(), 475, channelName, ":Cannot join channel (+k)");
         return false;
     }
 
     if (channel->hasLimit() && channel->memberCount() >= channel->getLimit())
     {
-        Server::sendNumeric(client.getFd(), 471, channelName, ":Cannot join channel (+l)");
+        server.sendNumeric(client.getFd(), 471, channelName, ":Cannot join channel (+l)");
         return false;
     }
 
@@ -50,7 +50,7 @@ bool CommandManager::validateChannelName(Client& client, const std::string& chan
     if (!channelName.empty() && (channelName[0] == '#' || channelName[0] == '&'))
         return true;
 
-    Server::sendNumeric(client.getFd(), 403, channelName, ":No such channel");
+    server.sendNumeric(client.getFd(), 403, channelName, ":No such channel");
     return false;
 }
 
@@ -76,7 +76,7 @@ void CommandManager::handleJoin(Client& client, const Command& cmd)
 
     if (args.empty())
     {
-        Server::sendNumeric(client.getFd(), 461, "*", "JOIN :Not enough parameters");
+        server.sendNumeric(client.getFd(), 461, "*", "JOIN :Not enough parameters");
         return;
     }
 

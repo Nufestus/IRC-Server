@@ -66,7 +66,7 @@ class Server
         void removeChannel(const std::string& channelName);
 
         // ─── Public — Messaging ─────────────────────────────────────────
-        void sendError(int clientFd, std::string Errorcode, std::string message);
+        // void sendError(int clientFd, std::string Errorcode, std::string message);
         void sendNumeric(int clientFd, int code, const std::string& targetNick, const std::string& message);
         void sendToClient(int clientFd, const std::string& message);
         void broadcastToSharedChannels(const Client& sender, const std::map<std::string, Channel*>& channelsToLeave, const std::string& message);

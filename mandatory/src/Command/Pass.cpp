@@ -7,7 +7,7 @@ bool CommandManager::authenticateClient(Client& client, const std::string& passw
 {
     if (password != server.getPassword())
     {
-        Server::sendNumeric(client.getFd(), 464, "*", ":Password incorrect");
+        server.sendNumeric(client.getFd(), 464, "*", ":Password incorrect");
         return false;
     }
     return true;
@@ -17,7 +17,7 @@ bool CommandManager::validatePassArgs(Client& client, const std::vector<std::str
 {
     if (args.empty() || args[0].empty())
     {
-        Server::sendNumeric(client.getFd(), 461, "*", "PASS :Not enough parameters");
+        server.sendNumeric(client.getFd(), 461, "*", "PASS :Not enough parameters");
         return false;
     }
     return true;

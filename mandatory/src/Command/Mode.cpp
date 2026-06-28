@@ -82,12 +82,12 @@ void applyModeOperator(Channel* channel, Client& client, const ModeChange change
 	int targetFd = server.getFdByNick(targetNick);
 	if (targetFd == -1)
 	{
-		Server::sendNumeric(client.getFd(), 401, client.getNick(), targetNick + " :No such nick");
+		server.sendNumeric(client.getFd(), 401, client.getNick(), targetNick + " :No such nick");
 		return;
 	}
 
 	if (!channel->isMember(targetFd)){
-		Server::sendNumeric(client.getFd(), 441, client.getNick(), targetNick + " " + channel->getName() + " :They are not on that channel");
+		server.sendNumeric(client.getFd(), 441, client.getNick(), targetNick + " " + channel->getName() + " :They are not on that channel");
 		return;
 	}
 	if (change.add)
@@ -117,7 +117,7 @@ void applyChanges(Channel* channel, Client& client, const std::vector<ModeChange
 				applyModeTopic(channel, client, change.add);
 				break;
 			default :
-				Server::sendNumeric(client.getFd(), 472, client.getNick(), std::string(1, change.flag) + " :is unknown mode char");				
+				server.sendNumeric(client.getFd(), 472, client.getNick(), std::string(1, change.flag) + " :is unknown mode char");				
 		}
 	}
 }
@@ -125,17 +125,17 @@ void applyChanges(Channel* channel, Client& client, const std::vector<ModeChange
 void CommandManager::handleMode(Client& client, const Command& cmd){
 	const std::vector<std::string> args = cmd.getArgs();
 	if (args.size() < 1){
-        Server::sendNumeric(client.getFd(), 461, client.getNick(), "MODE :Not enough parameters");
+        server.sendNumeric(client.getFd(), 461, client.getNick(), "MODE :Not enough parameters");
 		return;
 	}
 	const std::string channelName = args[0];
 	Channel* channel = server.getChannel(channelName);
 	if (!channel){
-        Server::sendNumeric(client.getFd(), 403, client.getNick(), channelName + " :No such channel");
+        server.sendNumeric(client.getFd(), 403, client.getNick(), channelName + " :No such channel");
 		return;
 	}
 	if (!channel->isMember(client.getFd())){
-        Server::sendNumeric(client.getFd(), 442, client.getNick(), channelName + " :You're not on that channel");
+        server.sendNumeric(client.getFd(), 442, client.getNick(), channelName + " :You're not on that channel");
 		return;
 	}
 	if (args.size() == 1){
@@ -144,7 +144,7 @@ void CommandManager::handleMode(Client& client, const Command& cmd){
 		return ;
 	}
 	if (!channel->isOperator(client.getFd())){
-        Server::sendNumeric(client.getFd(), 482, client.getNick(), channelName + " :You're not channel operator");
+        server.sendNumeric(client.getFd(), 482, client.getNick(), channelName + " :You're not channel operator");
 		return ;
 	}
 	const std::vector<ModeChange> changes = parseModeString(cmd.getArgs());

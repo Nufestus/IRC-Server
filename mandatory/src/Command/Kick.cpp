@@ -34,7 +34,7 @@ bool CommandManager::validateKickArgs(Client& client, const std::vector<std::str
 {
     if (args.size() < 2 || args.size() > 3)
     {
-        Server::sendNumeric(client.getFd(), 461, client.getNick(), "KICK :Not enough parameters");
+        server.sendNumeric(client.getFd(), 461, client.getNick(), "KICK :Not enough parameters");
         return false;
     }
     return true;
@@ -44,19 +44,19 @@ bool CommandManager::validateKickAccess(Client& client, Channel* channel, const 
 {
     if (!channel)
     {
-        Server::sendNumeric(client.getFd(), 403, client.getNick(), channelName + " :No such channel");
+        server.sendNumeric(client.getFd(), 403, client.getNick(), channelName + " :No such channel");
         return false;
     }
 
     if (!channel->isMember(client.getFd()))
     {
-        Server::sendNumeric(client.getFd(), 442, client.getNick(), channelName + " :You're not on that channel");
+        server.sendNumeric(client.getFd(), 442, client.getNick(), channelName + " :You're not on that channel");
         return false;
     }
 
     if (!channel->isOperator(client.getFd()))
     {
-        Server::sendNumeric(client.getFd(), 482, client.getNick(), channelName + " :You're not channel operator");
+        server.sendNumeric(client.getFd(), 482, client.getNick(), channelName + " :You're not channel operator");
         return false;
     }
 
@@ -67,13 +67,13 @@ bool CommandManager::validateKickTarget(Client& client, Channel* channel, Client
 {
     if (!target)
     {
-        Server::sendNumeric(client.getFd(), 401, client.getNick(), targetName + " :No such nick");
+        server.sendNumeric(client.getFd(), 401, client.getNick(), targetName + " :No such nick");
         return false;
     }
 
     if (!channel->isMember(target->getFd()))
     {
-        Server::sendNumeric(client.getFd(), 441, client.getNick(), targetName + " " + channelName + " :They are not on that channel");
+        server.sendNumeric(client.getFd(), 441, client.getNick(), targetName + " " + channelName + " :They are not on that channel");
         return false;
     }
 

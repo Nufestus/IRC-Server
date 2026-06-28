@@ -113,7 +113,7 @@ int main(int ac, char **av)
                 }
 
                 if (user.getBuffer().size() > 512) {
-                    IRC.sendError(client_fd, "417", "Input line too long");
+                    IRC.sendNumeric(client_fd, 417, "*", "Input line too long");
                     epoll_ctl(IRC.getEpollFd(), EPOLL_CTL_DEL, client_fd, NULL);
                     close(client_fd);
                     IRC.removeClient(client_fd);

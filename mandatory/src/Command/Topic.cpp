@@ -8,7 +8,7 @@ bool CommandManager::validateTopicArgs(Client& client, const std::vector<std::st
 
     if (args.empty() || args.size() > 2)
     {
-        Server::sendNumeric(client.getFd(), 461, client.getNick(), "TOPIC :Not enough parameters");
+        server.sendNumeric(client.getFd(), 461, client.getNick(), "TOPIC :Not enough parameters");
         return false;
     }
     return true;
@@ -18,13 +18,13 @@ bool CommandManager::validateTopicAccess(Client& client, Channel* channel, const
 {
     if (!channel)
     {
-        Server::sendNumeric(client.getFd(), 403, client.getNick(), channelName + " :No such channel");
+        server.sendNumeric(client.getFd(), 403, client.getNick(), channelName + " :No such channel");
         return false;
     }
 
     if (!channel->isMember(client.getFd()))
     {
-        Server::sendNumeric(client.getFd(), 442, client.getNick(), channelName + " :You're not on that channel");
+        server.sendNumeric(client.getFd(), 442, client.getNick(), channelName + " :You're not on that channel");
         return false;
     }
 
@@ -35,11 +35,11 @@ void CommandManager::sendTopic(Client& client, Channel* channel, const std::stri
 {
     if (!channel->hasTopic())
     {
-        Server::sendNumeric(client.getFd(), 331, client.getNick(), channelName + " :No topic is set");
+        server.sendNumeric(client.getFd(), 331, client.getNick(), channelName + " :No topic is set");
         return;
     }
 
-    Server::sendNumeric(client.getFd(), 332, client.getNick(), channelName + " :" + channel->getTopic());
+    server.sendNumeric(client.getFd(), 332, client.getNick(), channelName + " :" + channel->getTopic());
 }
 
 void CommandManager::setTopic(Client& client, Channel* channel, const std::string& channelName, const std::string& newTopic)

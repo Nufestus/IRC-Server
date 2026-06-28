@@ -220,20 +220,20 @@ bool Server::userExists(const std::string& nick) const
 }
 
 
-// void Server::broadcastToSharedChannels(const Client& sender, const std::map<std::string, Channel*>& channelsToLeave, const std::string& message){
+void Server::broadcastToSharedChannels(const Client& sender, const std::map<std::string, Channel*>& channelsToLeave, const std::string& message){
 
-//     std::set<int> recipients;
-//     for (std::map<std::string, Channel*>::const_iterator it = channelsToLeave.begin(); it != channelsToLeave.end(); ++it)
-//     {
-//         Channel* ch = it->second;
-//         if (!ch) continue;
-//         const std::map<int, bool>& members = ch->getMembers();
-//         for (std::map<int, bool>::const_iterator mit = members.begin(); mit != members.end(); ++mit)
-//             recipients.insert(mit->first);
-//     }
-//     for (std::set<int>::iterator it = recipients.begin(); it != recipients.end(); ++it)
-//         sendToClient(*it, message);
-// }
+    std::set<int> recipients;
+    for (std::map<std::string, Channel*>::const_iterator it = channelsToLeave.begin(); it != channelsToLeave.end(); ++it)
+    {
+        Channel* ch = it->second;
+        if (!ch) continue;
+        const std::map<int, bool>& members = ch->getMembers();
+        for (std::map<int, bool>::const_iterator mit = members.begin(); mit != members.end(); ++mit)
+            recipients.insert(mit->first);
+    }
+    for (std::set<int>::iterator it = recipients.begin(); it != recipients.end(); ++it)
+        sendToClient(*it, message);
+}
 
 bool Server::channelExists(const std::string& channelName) const
 {

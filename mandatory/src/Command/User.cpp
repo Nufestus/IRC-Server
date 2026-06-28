@@ -9,7 +9,7 @@ bool CommandManager::validateUserNotRegistered(Client& client)
         return true;
 
     const std::string target = client.hasNick() ? client.getNick() : "*";
-    Server::sendNumeric(client.getFd(), 462, target, ":You have already registered");
+    server.sendNumeric(client.getFd(), 462, target, ":You have already registered");
     return false;
 }
 
@@ -17,7 +17,7 @@ bool CommandManager::validateUserArgs(Client& client, const std::vector<std::str
 {
     if (args.size() != 4 || args[0].empty() || args[3].empty())
     {
-        Server::sendNumeric(client.getFd(), 461, "*", "USER :Not enough parameters");
+        server.sendNumeric(client.getFd(), 461, "*", "USER :Not enough parameters");
         return false;
     }
     return true;

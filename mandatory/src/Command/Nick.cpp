@@ -41,7 +41,7 @@ void CommandManager::handleNick(Client& client, const Command& cmd)
 
     if (args.empty() || args[0].empty())
     {
-        Server::sendNumeric(client.getFd(), 431, "*", ":No nickname given");
+        server.sendNumeric(client.getFd(), 431, "*", ":No nickname given");
         return;
     }
 
@@ -52,13 +52,13 @@ void CommandManager::handleNick(Client& client, const Command& cmd)
 
     if (!isValidNickname(newNick))
     {
-        Server::sendNumeric(client.getFd(), 432, newNick, ":Erroneous nickname");
+        server.sendNumeric(client.getFd(), 432, newNick, ":Erroneous nickname");
         return;
     }
 
     if (server.userExists(newNick))
     {
-        Server::sendNumeric(client.getFd(), 433, newNick, ":Nickname is already in use");
+        server.sendNumeric(client.getFd(), 433, newNick, ":Nickname is already in use");
         return;
     }
 

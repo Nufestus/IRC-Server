@@ -99,10 +99,10 @@ const Channel* Server::getChannel(const std::string& channelName) const
     return &it->second;
 }
 
-void Server::sendError(int clientFd, std::string errorCode, std::string message) {
-    std::string response = ":irc " + errorCode + " " + message + "\r\n";
-    sendToClient(clientFd, response);
-}
+// void Server::sendError(int clientFd, std::string errorCode, std::string message) {
+//     std::string response = ":irc " + errorCode + " " + message + "\r\n";
+//     sendToClient(clientFd, response);
+// }
 
 void Server::sendNumeric(int clientFd, int code, const std::string& targetNick, const std::string& message) {
     std::ostringstream oss;

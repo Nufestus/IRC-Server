@@ -3,13 +3,17 @@
 #include "../includes/Command.hpp"
 #include "../includes/Server.hpp"
 
-Channel::Channel() : operatorCount(0), inviteOnly(false)
+Channel::Channel()
+    : operatorCount(0), inviteOnly(false), topicProtected(false),
+      userLimit(0), limited(false), protectedChannel(false)
 {
 }
 
-Channel::Channel(const std::string& name, Client& creator) : name(name), operatorCount(0), inviteOnly(false)
+Channel::Channel(const std::string& name, Client& creator)
+    : name(name), operatorCount(0), inviteOnly(false), topicProtected(false),
+      userLimit(0), limited(false), protectedChannel(false)
 {
-	members[creator.getFd()] = true;
+    members[creator.getFd()] = true;
 }
 
 Channel::~Channel()
@@ -77,29 +81,20 @@ void Channel::broadcast(const std::string &message, int senderFd, bool includeSe
 
 void Channel::inviteClient(int clientFd)
 {
-	inviteList.push_back(clientFd);
+    if (std::find(inviteList.begin(), inviteList.end(), clientFd) == inviteList.end())
+        inviteList.push_back(clientFd);
 }
 
 void Channel::deinviteClient(int clientFd)
 {
-	for (std::vector<int>::iterator it = inviteList.begin(); it != inviteList.end(); ++it)
-	{
-		if (*it == clientFd)
-		{
-			inviteList.erase(it);
-			return;
-		}
-	}
+    std::vector<int>::iterator it = std::find(inviteList.begin(), inviteList.end(), clientFd);
+    if (it != inviteList.end())
+        inviteList.erase(it);
 }
 
 bool Channel::isInvited(int clientFd) const
 {
-	for (std::vector<int>::const_iterator it = inviteList.begin(); it != inviteList.end(); ++it)
-	{
-		if (*it == clientFd)
-			return true;
-	}
-	return false;
+    return std::find(inviteList.begin(), inviteList.end(), clientFd) != inviteList.end();
 }
 
 void Channel::setTopic(std::string topic){

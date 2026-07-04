@@ -8,7 +8,7 @@ static void handleNewConnection(Server &IRC);
 static void disconnectClient(Server &IRC, int fd);
 static bool handleErrorOrHangup(Server &IRC, int fd, uint32_t evFlags);
 static void handleWritable(Server &IRC, int fd, uint32_t evFlags);
-static bool receiveData(Server &IRC, int fd, uint32_t evFlags);
+static bool receiveData(Server &IRC, int fd);
 static void processClientBuffer(Server &IRC, Client &user, int fd);
 static Command parseLine(const std::string &request, Client &user);
 
@@ -46,8 +46,11 @@ int main(int ac, char **av)
 
             handleWritable(IRC, fd, events[i].events);
 
+            if (!IRC.userExists(fd))
+                continue;
+
             if (events[i].events & EPOLLIN)
-                receiveData(IRC, fd, events[i].events);
+                receiveData(IRC, fd);
         }
     }
 }
@@ -116,9 +119,8 @@ static void handleWritable(Server &IRC, int fd, uint32_t evFlags)
 
 // ── Read available data from the socket into the client's buffer ────────
 // Returns false if the client was disconnected/removed during this call.
-static bool receiveData(Server &IRC, int fd, uint32_t evFlags)
+static bool receiveData(Server &IRC, int fd)
 {
-    (void)evFlags;
     char readBuf[1024];
     Client &user = IRC.getClient(fd);
 
@@ -127,6 +129,12 @@ static bool receiveData(Server &IRC, int fd, uint32_t evFlags)
 
     if (bytes > 0)
     {
+        if (bytes == 1 && readBuf[0] == 0x04)
+        {
+            std::cout << "user fd " << fd << " disconnected" << std::endl;
+            disconnectClient(IRC, fd);
+            return false;
+        }
         readBuf[bytes] = '\0';
         user.getBuffer() += readBuf;
     }
@@ -138,16 +146,9 @@ static bool receiveData(Server &IRC, int fd, uint32_t evFlags)
         disconnectClient(IRC, fd);
         return false;
     }
-    else
+    else if (bytes == 0)
     {
         std::cout << "user fd " << fd << " disconnected" << std::endl;
-        disconnectClient(IRC, fd);
-        return false;
-    }
-
-    if (user.getBuffer().size() > 512)
-    {
-        IRC.sendNumeric(fd, 417, "*", "Input line too long");
         disconnectClient(IRC, fd);
         return false;
     }
@@ -198,6 +199,12 @@ static void processClientBuffer(Server &IRC, Client &user, int fd)
         std::string request = user.getBuffer().substr(0, pos);
         user.getBuffer().erase(0, pos + 2);
 
+        if (user.getBuffer().size() > 510)
+        {
+            IRC.sendNumeric(fd, 417, "*", "Input line too long");
+            disconnectClient(IRC, fd);
+            return ;
+        }
         Command commandline = parseLine(request, IRC.getClient(fd));
 
         IRC.handleRequest(user, commandline);

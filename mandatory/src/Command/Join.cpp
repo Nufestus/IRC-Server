@@ -21,22 +21,21 @@ void CommandManager::addClientToChannel(Client& client, Channel* channel)
 
 bool CommandManager::validateChannelAccess(Client& client, Channel* channel, const std::string& channelName, const std::string& key)
 {
-    if (!channel->isInviteOnly() || channel->isMember(client.getFd()))
-        return true;
+    bool isMember = channel->isMember(client.getFd());
 
-    if (!channel->isInvited(client.getFd()))
+    if (channel->isInviteOnly() && !isMember && !channel->isInvited(client.getFd()))
     {
         server.sendNumeric(client.getFd(), 473, channelName, ":Cannot join channel (+i)");
         return false;
     }
 
-    if (channel->hasKey() && channel->getKey() != key)
+    if (!isMember && channel->hasKey() && channel->getKey() != key)
     {
         server.sendNumeric(client.getFd(), 475, channelName, ":Cannot join channel (+k)");
         return false;
     }
 
-    if (channel->hasLimit() && channel->memberCount() >= channel->getLimit())
+    if (!isMember && channel->hasLimit() && channel->memberCount() >= channel->getLimit())
     {
         server.sendNumeric(client.getFd(), 471, channelName, ":Cannot join channel (+l)");
         return false;

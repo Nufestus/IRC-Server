@@ -29,7 +29,7 @@ class Server
         struct epoll_event _event;
 
         // ─── Private Members — State ────────────────────────────────────
-        std::map<uint16_t, Client> _users;
+        std::map<int, Client> _users;
         std::map<std::string, Channel> _channels;
         std::string _password;
 
@@ -38,7 +38,7 @@ class Server
 
     public:
         // ─── Public — Constructors & Destructor ─────────────────────────
-        Server(uint16_t port, std::string password);
+        Server(int port, std::string password);
         ~Server();
 
         // ─── Public — Getters — Server ──────────────────────────────────
@@ -49,13 +49,14 @@ class Server
         CommandManager& getComandManager();
 
         // ─── Public — Getters & Management — Clients ────────────────────
-        Client& getClient(uint16_t clientFd) ;
-         Client* getClient(const std::string& nick) ;
-        std::map<uint16_t, Client>& getUsers();
-        const std::map<uint16_t, Client>& getUsers() const;
+        Client& getClient(int clientFd) ;
+        Client* getClient(const std::string& nick) ;
+        std::map<int, Client>& getUsers();
+        const std::map<int, Client>& getUsers() const;
         bool userExists(const std::string& nick) const;
+        bool userExists(int fd) const;
         void insertClient(Client user);
-        void removeClient(uint16_t clientFd);
+        void removeClient(int clientFd);
         int getFdByNick(std::string &nick);
 
         // ─── Public — Getters & Management — Channels ───────────────────
@@ -75,7 +76,7 @@ class Server
         // ─── Public — Utilities ─────────────────────────────────────────
         void memberList(Client& client, const Channel& channel);
         std::vector<std::string> splitCommaSeparated(const std::string& input, bool allowEmpty = false);
-        Client* findClient(uint16_t clientFd);
+        Client* findClient(int clientFd);
         void handleRequest(Client& client, const Command& cmd);
         void flushClient(int clienFd);
 };

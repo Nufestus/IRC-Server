@@ -22,7 +22,7 @@ class Client
 
     private:
         // ─── Private Members — Identity ─────────────────────────────────
-        u_int16_t _fd;
+        int _fd;
         std::string _nick;
         std::string _user;
         std::string _realname;
@@ -40,7 +40,7 @@ class Client
     public:
         // ─── Public — Constructors & Destructor ─────────────────────────
         Client();
-        Client(u_int16_t fd);
+        Client(int fd);
         ~Client();
         
         // ─── Public — Setters ───────────────────────────────────────────
@@ -50,7 +50,7 @@ class Client
         void setShouldDisconnect(bool status);
 
         // ─── Public — Getters — Identity ────────────────────────────────
-        u_int16_t getFd() const;
+        int getFd() const;
         const std::string& getNick() const;
         const std::string& getUser() const;
         const std::string& getRealname() const;

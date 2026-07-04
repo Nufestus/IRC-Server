@@ -7,7 +7,7 @@ Client::Client()
       _shouldDisconnect(false)
 {}
 
-Client::Client(u_int16_t fd) 
+Client::Client(int fd) 
 		: _fd(fd),
 		  _authState(AuthState::AwaitPass),
 		  _shouldDisconnect(false)
@@ -29,7 +29,7 @@ void Client::setShouldDisconnect(bool status) {_shouldDisconnect = status;}
 
 // Getters
 
-u_int16_t Client::getFd() const {return _fd;}
+int Client::getFd() const {return _fd;}
 
 const std::string& Client::getNick() const {return _nick;}
 
@@ -63,7 +63,7 @@ const std::string Client::getPrefix() const
     std::string nick = _nick.empty() ? "*" : _nick;
     std::string user = _user.empty() ? "unknown" : _user;
     std::string host = _hostname.empty() ? "localhost" : _hostname;
-    return ":" + nick + "!" + user + "@" + host;
+    return nick + "!" + user + "@" + host;
 }
 
 void Client::addChannel(Channel* ch)

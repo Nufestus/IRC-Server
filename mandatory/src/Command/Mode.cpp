@@ -61,6 +61,10 @@ void applyModeLimit(Channel* channel, Client& client, const ModeChange change){
 		std::stringstream ss(change.params);
 		std::size_t userLimit;
 		ss >> userLimit;
+		if (ss.fail() || ss.eof())
+		{
+			
+		}
 		channel->setUserLimit(userLimit);
 	}
 		

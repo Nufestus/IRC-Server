@@ -4,6 +4,29 @@
 #include "../../includes/CommandManager.hpp"
 #include "../../includes/ModeChange.hpp"
 
+void sendChannelModes(Client &client, Channel *channel, Server& server){
+        std::string modes = "+";
+        std::string params;
+
+        if (channel->isInviteOnly())
+                modes += "i";
+        if (channel->isTopicProtected())
+                modes += "t";
+        if (channel->hasKey()){
+                modes += "k";
+                params += " " + channel->getKey();
+        }
+        if (channel->hasLimit()){
+                modes += "l";
+
+                std::stringstream ss;
+                ss << channel->getLimit();
+                params += " " + ss.str();
+        }
+
+        server.sendNumeric(client.getFd(), 324, client.getNick(), channel->getName() + " " + modes + params);
+}
+
 bool flagTakeParams(char flag, bool adding){
 
 	if (flag == 'o' || flag == 'k') return true;
@@ -51,23 +74,26 @@ void applyModeTopic(Channel* channel, Client& client, bool add){
 	if (add != channel->isTopicProtected())
 		channel->setTopicProtected(add);
 }
-void applyModeLimit(Channel* channel, Client& client, const ModeChange change){
-	
-	if (!change.add && channel->hasLimit())
-		channel->setLimited(false);
-	else if (change.add){
-		if (!channel->hasLimit())
-			channel->setLimited(true);
-		std::stringstream ss(change.params);
-		std::size_t userLimit;
-		ss >> userLimit;
-		if (ss.fail() || ss.eof())
-		{
-			
-		}
-		channel->setUserLimit(userLimit);
-	}
-		
+void applyModeLimit(Channel* channel, Client& client, const ModeChange change, Server &server)
+{
+    if (!change.add && channel->hasLimit())
+        channel->setLimited(false);
+    else if (change.add)
+    {
+        std::stringstream ss(change.params);
+        std::size_t userLimit;
+        ss >> userLimit;
+
+        if (ss.fail() || change.params.empty() || change.params[0] == '-')
+        {
+            server.sendNumeric(client.getFd(), 461, "MODE", ":Not enough parameters");
+            return;
+        }
+
+        if (!channel->hasLimit())
+            channel->setLimited(true);
+        channel->setUserLimit(userLimit);
+    }
 }
 void applyModeKey(Channel* channel, Client& client, const ModeChange change){
 	if (!change.add){
@@ -115,7 +141,7 @@ void applyChanges(Channel* channel, Client& client, const std::vector<ModeChange
 				applyModeOperator(channel, client, change, server);
 				break;
 			case 'l' :
-				applyModeLimit(channel, client, change);
+				applyModeLimit(channel, client, change, server);
 				break;
 			case 't' :
 				applyModeTopic(channel, client, change.add);
@@ -144,7 +170,7 @@ void CommandManager::handleMode(Client& client, const Command& cmd){
 	}
 	if (args.size() == 1){
 		
-		// View the channel mode : 324 RPL_CHANNELMODEIS
+		sendChannelModes(client, channel, server);
 		return ;
 	}
 	if (!channel->isOperator(client.getFd())){

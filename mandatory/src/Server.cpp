@@ -121,12 +121,18 @@ void Server::sendNumeric(int clientFd, int code, const std::string& targetNick, 
     sendToClient(clientFd, response);
 }
 
-void Server::sendToClient(int clientFd, const std::string& message) {
+void Server::sendToClient(int clientFd, const std::string& message)
+{
     Client* client = findClient(clientFd);
     if (!client)
-        return ;
+        return;
+
     client->getOutBuffer() += message;
-    flushClient(clientFd);
+
+    struct epoll_event ev;
+    ev.data.fd = clientFd;
+    ev.events = EPOLLIN | EPOLLOUT;   // keep reading, also wait to become writable
+    epoll_ctl(_epoll_fd, EPOLL_CTL_MOD, clientFd, &ev);
 }
 
 void Server::notifyClientQuit(Client& client, const std::string& reason, bool includeSender)
@@ -283,7 +289,8 @@ void Server::handleRequest(Client& client, const Command& cmd){
     cmdManager.executeCommand(client, cmd);
 }
 
-void Server::flushClient(int clientFd){
+void Server::flushClient(int clientFd)
+{
     Client* client = findClient(clientFd);
     if (!client)
         return;
@@ -298,17 +305,15 @@ void Server::flushClient(int clientFd){
         buf.erase(0, static_cast<std::size_t>(sent));
     else if (sent < 0 && errno != EAGAIN && errno != EWOULDBLOCK)
     {
-        // real send error — notify channel peers and disconnect client
         notifyClientQuit(*client, "Client exited", false);
         epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, clientFd, NULL);
         close(clientFd);
         removeClient(clientFd);
         return;
     }
-    // sent == 0, or EAGAIN: nothing more to do right now, just adjust epoll below
 
     struct epoll_event ev;
     ev.data.fd = clientFd;
-    ev.events = buf.empty() ? EPOLLIN : (EPOLLIN | EPOLLOUT);
+    ev.events = EPOLLIN | (buf.empty() ? 0 : EPOLLOUT);  // always keep EPOLLIN
     epoll_ctl(_epoll_fd, EPOLL_CTL_MOD, clientFd, &ev);
 }

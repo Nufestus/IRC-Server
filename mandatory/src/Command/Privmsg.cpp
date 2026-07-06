@@ -30,7 +30,7 @@ void CommandManager::sendToChannel(Client& client, const std::string& target, co
 		return;
 	}
 
-	const std::string msg = buildPrivmsgStr(client.getNick(), target, message);
+	const std::string msg = buildPrivmsgStr(client.getPrefix(), target, message);
     channel->broadcast(msg, client.getFd(), false, server);
 }
 

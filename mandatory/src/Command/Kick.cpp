@@ -82,6 +82,6 @@ bool CommandManager::validateKickTarget(Client& client, Channel* channel, Client
 
 void CommandManager::broadcastKick(Client& client, Client& target, Channel* channel, const std::string& channelName, const std::string& reason)
 {
-    const std::string msg = ":" + client.getPrefix() + " KICK " + channelName + " " + target.getNick() + " :" + reason + "\r\n";
+    const std::string msg = client.getPrefix() + " KICK " + channelName + " " + target.getNick() + " :" + reason + "\r\n";
     channel->broadcast(msg, client.getFd(), true, server);
 }

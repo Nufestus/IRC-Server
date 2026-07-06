@@ -27,7 +27,7 @@ bool CommandManager::validateInvite(Client& client, const std::string& targetNic
         return false;
     }
 
-    if (!client.isInChannel(channelName))
+    if (!channel->isMember(client.getFd()))
     {
         server.sendNumeric(client.getFd(), 442,  channelName,  ":You're not on that channel");
         return false;

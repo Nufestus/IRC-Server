@@ -27,6 +27,11 @@ bool CommandManager::validateTopicAccess(Client& client, Channel* channel, const
         server.sendNumeric(client.getFd(), 442, client.getNick(), channelName + " :You're not on that channel");
         return false;
     }
+    if (channel->isTopicProtected() && !channel->isOperator(client.getFd()))
+    {
+        server.sendNumeric(client.getFd(), 483, client.getNick(), channelName, " :You're not channel operator");
+        return false;
+    }
 
     return true;
 }
@@ -62,7 +67,6 @@ void CommandManager::handleTopic(Client& client, const Command& cmd)
 
     if (!validateTopicAccess(client, channel, channelName))
         return;
-    
         
     if (args.size() == 1)
         sendTopic(client, channel, channelName);

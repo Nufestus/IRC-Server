@@ -104,21 +104,18 @@ const Channel* Server::getChannel(const std::string& channelName) const
 //     sendToClient(clientFd, response);
 // }
 
-void Server::sendNumeric(int clientFd, int code, const std::string& targetNick, const std::string& message) {
+void Server::sendNumeric(int clientFd, int code, const std::string& targetNick, const std::string& message, const std::string& command)
+{
     std::ostringstream oss;
-    oss << ":irc " << std::setfill('0') << std::setw(3) << code << " " 
-        << targetNick;
+    oss << ":irc " << std::setfill('0') << std::setw(3) << code << " " << targetNick;
+
+    if (!command.empty())
+        oss << " " << command;
 
     if (!message.empty())
-    {
-        if (message[0] == ':')
-            oss << " " << message;
-        else
-            oss << " :" << message;
-    }
-    
-    std::string response = oss.str() + "\r\n";
-    sendToClient(clientFd, response);
+        oss << (message[0] == ':' ? " " : " :") << message;
+
+    sendToClient(clientFd, oss.str() + "\r\n");
 }
 
 void Server::sendToClient(int clientFd, const std::string& message)
@@ -296,24 +293,26 @@ void Server::flushClient(int clientFd)
         return;
 
     std::string& buf = client->getOutBuffer();
-    if (buf.empty())
-        return;
 
-    ssize_t sent = send(clientFd, buf.c_str(), buf.size(), 0);
-
-    if (sent > 0)
-        buf.erase(0, static_cast<std::size_t>(sent));
-    else if (sent < 0 && errno != EAGAIN && errno != EWOULDBLOCK)
+    if (!buf.empty())
     {
-        notifyClientQuit(*client, "Client exited", false);
-        epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, clientFd, NULL);
-        close(clientFd);
-        removeClient(clientFd);
-        return;
+        ssize_t sent = send(clientFd, buf.c_str(), buf.size(), 0);
+
+        if (sent > 0)
+            buf.erase(0, static_cast<std::size_t>(sent));
+        else if (sent < 0 && errno != EAGAIN && errno != EWOULDBLOCK)
+        {
+            notifyClientQuit(*client, "Client exited", false);
+            epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, clientFd, NULL);
+            close(clientFd);
+            removeClient(clientFd);
+            return;
+        }
     }
 
+    // Always re-sync the subscription, whether or not we entered the block above
     struct epoll_event ev;
     ev.data.fd = clientFd;
-    ev.events = EPOLLIN | (buf.empty() ? 0 : EPOLLOUT);  // always keep EPOLLIN
+    ev.events = EPOLLIN | (buf.empty() ? 0 : EPOLLOUT);
     epoll_ctl(_epoll_fd, EPOLL_CTL_MOD, clientFd, &ev);
 }

@@ -17,7 +17,7 @@ bool CommandManager::validateUserArgs(Client& client, const std::vector<std::str
 {
     if (args.size() != 4 || args[0].empty() || args[3].empty())
     {
-        server.sendNumeric(client.getFd(), 461, "*", "USER :Not enough parameters");
+        server.sendNumeric(client.getFd(), 461, "*", "Not enough parameters", "USER");
         return false;
     }
     return true;
@@ -34,6 +34,6 @@ void CommandManager::handleUser(Client& client, const Command& cmd)
         return;
 
     const std::string realname = stripLeadingColon(args[3]);
-    client.setUser(args[0], realname);
+    client.setUser(args[0], realname, args[1]);
     updateRegistration(client);
 }

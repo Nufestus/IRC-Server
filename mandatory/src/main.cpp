@@ -183,9 +183,6 @@ static Command parseLine(const std::string &request, Client &user)
             args.push_back(token);
     }
 
-    for (size_t j = 0; j < args.size(); ++j)
-        std::cout << "Arg " << j << ": " << args[j] << std::endl;
-
     return Command(cmd, args, user);
 }
 

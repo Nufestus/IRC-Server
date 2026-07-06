@@ -62,10 +62,13 @@ void CommandManager::handleTopic(Client& client, const Command& cmd)
 
     if (!validateTopicAccess(client, channel, channelName))
         return;
-
+    
+        
     if (args.size() == 1)
         sendTopic(client, channel, channelName);
-    else
-        setTopic(client, channel, channelName, args[1]);
+    else{
+        const std::string topic = stripLeadingColon(args[1]);
+        setTopic(client, channel, channelName, topic);
+    }
 }
 

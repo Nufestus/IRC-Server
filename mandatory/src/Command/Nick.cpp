@@ -41,7 +41,8 @@ void CommandManager::handleNick(Client& client, const Command& cmd)
 
     if (args.empty() || args[0].empty())
     {
-        server.sendNumeric(client.getFd(), 431, "*", ":No nickname given");
+        std::string nick = client.getNick().empty() ? "*" : client.getNick();
+        server.sendNumeric(client.getFd(), 431, nick, ":No nickname given");
         return;
     }
 

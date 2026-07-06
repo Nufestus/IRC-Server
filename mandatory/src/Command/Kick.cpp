@@ -32,9 +32,9 @@ void CommandManager::handleKick(Client& client, const Command& cmd)
 
 bool CommandManager::validateKickArgs(Client& client, const std::vector<std::string>& args)
 {
-    if (args.size() < 2 || args.size() > 3)
+    if (args.size() != 2 && args.size() != 3)
     {
-        server.sendNumeric(client.getFd(), 461, client.getNick(), "KICK :Not enough parameters");
+        server.sendNumeric(client.getFd(), 461, client.getNick(), "Not enough parameters", "KICK");
         return false;
     }
     return true;

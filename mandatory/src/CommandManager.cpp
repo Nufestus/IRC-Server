@@ -35,14 +35,15 @@ std::string CommandManager::stripLeadingColon(const std::string& str)
 void CommandManager::executeCommand(Client& client, const Command& cmd)
 {
     std::string cmdName = cmd.getCmd();
-    Server server = getServer();
-
-    if (client.getAuthState() == Client::AuthState::AwaitPass && cmdName != "PASS")
+    Server &server = getServer();
+    
+    if (client.getAuthState() == Client::AuthState::AwaitPass && cmdName != "PASS" && cmdName != "QUIT")
     {
+        std::cout << "command name: " << cmdName << std::endl;
         server.sendNumeric(client.getFd(), 451, "*", ":Register with PASS first");
         return;
     }
-    if (client.getAuthState() == Client::AuthState::AwaitNickUser && cmdName != "NICK" && cmdName != "USER")
+    if (client.getAuthState() == Client::AuthState::AwaitNickUser && cmdName != "NICK" && cmdName != "USER" && cmdName != "QUIT")
     {
         server.sendNumeric(client.getFd(), 451, "*", ":Register with NICK/USER first");
         return;

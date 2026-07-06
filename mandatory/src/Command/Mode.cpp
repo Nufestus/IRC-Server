@@ -5,26 +5,28 @@
 #include "../../includes/ModeChange.hpp"
 
 void sendChannelModes(Client &client, Channel *channel, Server& server){
-        std::string modes = "+";
-        std::string params;
+	std::string plus = "+";
+	std::string modes;
+	std::string params;
 
-        if (channel->isInviteOnly())
-                modes += "i";
-        if (channel->isTopicProtected())
-                modes += "t";
-        if (channel->hasKey()){
-                modes += "k";
-                params += " " + channel->getKey();
-        }
-        if (channel->hasLimit()){
-                modes += "l";
+	if (channel->isInviteOnly())
+			modes += "i";
+	if (channel->isTopicProtected())
+			modes += "t";
+	if (channel->hasKey()){
+			modes += "k";
+			params += " " + channel->getKey();
+	}
+	if (channel->hasLimit()){
+			modes += "l";
 
-                std::stringstream ss;
-                ss << channel->getLimit();
-                params += " " + ss.str();
-        }
+			std::stringstream ss;
+			ss << channel->getLimit();
+			params += " " + ss.str();
+	}
 
-        server.sendNumeric(client.getFd(), 324, client.getNick(), channel->getName() + " " + modes + params);
+	std::string msg = modes.empty() ? "" : " " + plus + modes + params;
+	server.sendNumeric(client.getFd(), 324, client.getNick() + " " + channel->getName(), msg);
 }
 
 bool flagTakeParams(char flag, bool adding){
@@ -86,7 +88,7 @@ void applyModeLimit(Channel* channel, Client& client, const ModeChange change, S
 
         if (ss.fail() || change.params.empty() || change.params[0] == '-')
         {
-            server.sendNumeric(client.getFd(), 461, "MODE", ":Not enough parameters");
+            server.sendNumeric(client.getFd(), 461, client.getNick(), "Not enough parameters", "MODE");
             return;
         }
 
@@ -147,7 +149,7 @@ void applyChanges(Channel* channel, Client& client, const std::vector<ModeChange
 				applyModeTopic(channel, client, change.add);
 				break;
 			default :
-				server.sendNumeric(client.getFd(), 472, client.getNick(), std::string(1, change.flag) + " :is unknown mode char");				
+				server.sendNumeric(client.getFd(), 472, client.getNick(), "is unknown mode char", std::string(1, change.flag));				
 		}
 	}
 }
@@ -155,7 +157,7 @@ void applyChanges(Channel* channel, Client& client, const std::vector<ModeChange
 void CommandManager::handleMode(Client& client, const Command& cmd){
 	const std::vector<std::string> args = cmd.getArgs();
 	if (args.size() < 1){
-        server.sendNumeric(client.getFd(), 461, client.getNick(), "MODE :Not enough parameters");
+        server.sendNumeric(client.getFd(), 461, client.getNick(), "Not enough parameters", "MODE");
 		return;
 	}
 	const std::string channelName = args[0];

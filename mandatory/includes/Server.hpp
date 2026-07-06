@@ -68,7 +68,7 @@ class Server
 
         // ─── Public — Messaging ─────────────────────────────────────────
         // void sendError(int clientFd, std::string Errorcode, std::string message);
-        void sendNumeric(int clientFd, int code, const std::string& targetNick, const std::string& message);
+        void sendNumeric(int clientFd, int code, const std::string& targetNick, const std::string& message, const std::string& command = "");
         void sendToClient(int clientFd, const std::string& message);
         void broadcastToSharedChannels(const Client& sender, const std::map<std::string, Channel*>& channelsToLeave, const std::string& message);
         void notifyClientQuit(Client& client, const std::string& reason, bool includeSender);

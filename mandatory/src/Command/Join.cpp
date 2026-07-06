@@ -75,7 +75,7 @@ void CommandManager::handleJoin(Client& client, const Command& cmd)
 
     if (args.empty())
     {
-        server.sendNumeric(client.getFd(), 461, "*", "JOIN :Not enough parameters");
+        server.sendNumeric(client.getFd(), 461, "*", "Not enough parameters", "JOIN");
         return;
     }
 

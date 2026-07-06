@@ -17,7 +17,7 @@ bool CommandManager::validatePassArgs(Client& client, const std::vector<std::str
 {
     if (args.empty() || args[0].empty())
     {
-        server.sendNumeric(client.getFd(), 461, "*", "PASS :Not enough parameters");
+        server.sendNumeric(client.getFd(), 461, "*", "Not enough parameters", "PASS");
         return false;
     }
     return true;

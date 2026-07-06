@@ -55,7 +55,7 @@ void CommandManager::handleInvite(Client& client, const Command& cmd)
 
     if (args.size() != 2)
     {
-        server.sendNumeric(client.getFd(), 461, "*", "INVITE :Not enough parameters");
+        server.sendNumeric(client.getFd(), 461, "*", "Not enough parameters", "INVITE");
         return;
     }
 

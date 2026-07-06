@@ -16,9 +16,10 @@ Client::~Client() {}
 
 
 // Setters
-void Client::setUser(const std::string& user, const std::string& realname) {
+void Client::setUser(const std::string& user, const std::string& realname, const std::string& hostname) {
 	_user = user;
 	_realname = realname;
+  _hostname = hostname;
 }
 
 void Client::setNick(std::string nickname) {_nick = nickname;}

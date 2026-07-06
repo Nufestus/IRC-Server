@@ -44,7 +44,7 @@ class Client
         ~Client();
         
         // ─── Public — Setters ───────────────────────────────────────────
-        void setUser(const std::string& user, const std::string& realname);
+        void setUser(const std::string& user, const std::string& realname, const std::string& hostname);
         void setNick(std::string nickname);
         void setAuthState(AuthState state);
         void setShouldDisconnect(bool status);

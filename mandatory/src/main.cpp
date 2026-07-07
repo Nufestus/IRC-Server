@@ -3,6 +3,7 @@
 #include "../includes/Command.hpp"
 #include "../includes/CommandManager.hpp"
 
+
 // ── Forward declarations of helper functions ────────────────────────────
 static void handleNewConnection(Server &IRC);
 static void disconnectClient(Server &IRC, int fd);
@@ -28,12 +29,10 @@ int main(int ac, char **av)
     {
         struct epoll_event events[MAX_EVENTS];
         int nfds = epoll_wait(IRC.getEpollFd(), events, MAX_EVENTS, -1);
-        std::cout << "Epoll woke up! Number of events: " << nfds << std::endl;
 
         for (int i = 0; i < nfds; i++)
         {
             int fd = events[i].data.fd;
-            std::cout << "Handling event for FD: " << fd << std::endl;
 
             if (fd == IRC.getServerFd())
             {
@@ -69,7 +68,6 @@ static void handleNewConnection(Server &IRC)
         return;
     }
 
-    std::cout << "NEW CONNECTION: FD " << client_fd << std::endl;
 
     int flags = fcntl(client_fd, F_GETFL, 0);
     if (flags == -1)
@@ -85,7 +83,7 @@ static void handleNewConnection(Server &IRC)
     if (epoll_ctl(IRC.getEpollFd(), EPOLL_CTL_ADD, client_fd, &ev) == -1)
         perror("epoll_ctl: client_fd");
     else
-        std::cout << "Added client FD " << client_fd << " to epoll" << std::endl;
+        
 
     IRC.insertClient(Client(client_fd));
 }
@@ -103,7 +101,6 @@ static bool handleErrorOrHangup(Server &IRC, int fd, uint32_t evFlags)
 {
     if (evFlags & (EPOLLHUP | EPOLLERR))
     {
-        std::cout << "user fd " << fd << " hung up / error" << std::endl;
         disconnectClient(IRC, fd);
         return true;
     }
@@ -125,13 +122,11 @@ static bool receiveData(Server &IRC, int fd)
     Client &user = IRC.getClient(fd);
 
     int bytes = recv(fd, readBuf, sizeof(readBuf) - 1, 0);
-    std::cout << "Recv called. Bytes received: " << bytes << std::endl;
 
     if (bytes > 0)
     {
         if (bytes == 1 && readBuf[0] == 0x04)
         {
-            std::cout << "user fd " << fd << " disconnected" << std::endl;
             disconnectClient(IRC, fd);
             return false;
         }
@@ -148,7 +143,6 @@ static bool receiveData(Server &IRC, int fd)
     }
     else if (bytes == 0)
     {
-        std::cout << "user fd " << fd << " disconnected" << std::endl;
         disconnectClient(IRC, fd);
         return false;
     }

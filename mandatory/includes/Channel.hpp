@@ -33,14 +33,14 @@ class Channel
 		bool limited;
 
 		// ─── Private Members — Topic ────────────────────────────────────
-		std::string channelKey;
 		bool protectedChannel;
+		std::string channelKey;
 
 
 	public:
 		// ─── Public — Constructors & Destructor ─────────────────────────
 		Channel();
-		Channel(const std::string& name, Client& creator);
+		Channel(const std::string& name, Client& creator, const std::string &key = "");
 		~Channel();
 
 		// ─── Public — Getters ───────────────────────────────────────────
@@ -74,7 +74,7 @@ class Channel
 
 		// ─── Public — Limit ──────────────────────────────────────────────
 		void setUserLimit(std::size_t lmt);
-		const std::size_t getLimit() const;
+		std::size_t getLimit() const;
 		bool hasLimit() const;
 		void setLimited(bool status);
 

@@ -37,13 +37,13 @@ void CommandManager::executeCommand(Client& client, const Command& cmd)
     std::string cmdName = cmd.getCmd();
     Server &server = getServer();
     
-    if (client.getAuthState() == Client::AuthState::AwaitPass && cmdName != "PASS" && cmdName != "QUIT")
+    if (client.getAuthState() == Client::AwaitPass && cmdName != "PASS" && cmdName != "QUIT")
     {
         std::cout << "command name: " << cmdName << std::endl;
         server.sendNumeric(client.getFd(), 451, "*", ":Register with PASS first");
         return;
     }
-    if (client.getAuthState() == Client::AuthState::AwaitNickUser && cmdName != "NICK" && cmdName != "USER" && cmdName != "QUIT")
+    if (client.getAuthState() == Client::AwaitNickUser && cmdName != "NICK" && cmdName != "USER" && cmdName != "QUIT")
     {
         server.sendNumeric(client.getFd(), 451, "*", ":Register with NICK/USER first");
         return;
@@ -60,12 +60,12 @@ void CommandManager::executeCommand(Client& client, const Command& cmd)
 
 void CommandManager::updateRegistration(Client& client)
 {
-    if (client.getAuthState() != Client::AuthState::AwaitNickUser
+    if (client.getAuthState() != Client::AwaitNickUser
         || !client.hasNick()
         || !client.hasUser())
         return;
 
-    client.setAuthState(Client::AuthState::Registered);
+    client.setAuthState(Client::Registered);
 
     const std::string& nick = client.getNick();
     server.sendNumeric(client.getFd(), 001, nick, ":Welcome to the Internet Relay Network " + client.getPrefix());

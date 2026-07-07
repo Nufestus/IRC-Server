@@ -12,9 +12,11 @@ void CommandManager::broadcastJoin(Client& client, Channel* channel, const std::
 
 void CommandManager::addClientToChannel(Client& client, Channel* channel)
 {
-    if (!channel->isMember(client.getFd()))
+    if (!channel->isMember(client.getFd())){
         channel->addMember(client.getFd());
-
+        client.addChannel(channel);
+    }
+    
     if (channel->isInviteOnly())
         channel->deinviteClient(client.getFd());
 }
@@ -58,7 +60,7 @@ void CommandManager::joinChannel(Client& client, const std::string& channelName,
     if (!validateChannelName(client, channelName))
         return;
 
-    Channel* channel = server.getOrCreateChannel(channelName, &client);
+    Channel* channel = server.getOrCreateChannel(channelName, &client, key);
     if (!channel)
         return;
 

@@ -42,7 +42,7 @@ std::vector<ModeChange> parseModeString(const std::vector<std::string>& args){
 	if (args.size() < 2) return changes;
 	
 	const std::string& flags = args[1];
-	int paramsIndx = 2;
+	std::size_t paramsIndx = 2;
 	bool adding = true;
 	
 	for (std::size_t i = 0; i < flags.size(); ++i){
@@ -68,11 +68,11 @@ std::vector<ModeChange> parseModeString(const std::vector<std::string>& args){
 	return changes;
 }
 
-void applyModeInvite(Channel* channel, Client& client, bool add){
+void applyModeInvite(Channel* channel, bool add){
 	if (add != channel->isInviteOnly())
 		channel->setInviteOnly(add);
 }
-void applyModeTopic(Channel* channel, Client& client, bool add){
+void applyModeTopic(Channel* channel, bool add){
 	if (add != channel->isTopicProtected())
 		channel->setTopicProtected(add);
 }
@@ -97,7 +97,7 @@ void applyModeLimit(Channel* channel, Client& client, const ModeChange change, S
         channel->setUserLimit(userLimit);
     }
 }
-void applyModeKey(Channel* channel, Client& client, const ModeChange change){
+void applyModeKey(Channel* channel, const ModeChange change){
 	if (!change.add){
 		if (channel->hasKey() && channel->getKey() == change.params){
 			channel->setChannelProtected(false);
@@ -134,10 +134,10 @@ void applyChanges(Channel* channel, Client& client, const std::vector<ModeChange
 		const ModeChange change = changes[i];
 		switch(change.flag){
 			case 'i' :
-				applyModeInvite(channel, client, change.add);
+				applyModeInvite(channel, change.add);
 				break;
 			case 'k' :
-				applyModeKey(channel, client, change);
+				applyModeKey(channel, change);
 				break;
 			case 'o' :
 				applyModeOperator(channel, client, change, server);
@@ -146,7 +146,7 @@ void applyChanges(Channel* channel, Client& client, const std::vector<ModeChange
 				applyModeLimit(channel, client, change, server);
 				break;
 			case 't' :
-				applyModeTopic(channel, client, change.add);
+				applyModeTopic(channel, change.add);
 				break;
 			default :
 				server.sendNumeric(client.getFd(), 472, client.getNick(), "is unknown mode char", std::string(1, change.flag));				

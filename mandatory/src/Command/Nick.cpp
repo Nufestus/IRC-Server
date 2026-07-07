@@ -27,10 +27,9 @@ void CommandManager::notifyNickChange(Client& client, const std::string& newNick
 {
     if (!client.hasNick() && !client.isRegistred())
         return;
-
+std::cout << "[DEBUG NICK] Client memory address: " << &client << " | FD: " << client.getFd() << " | Channels size: " << client.getChannels().size() << std::endl;
     const std::string msg = ":" + client.getPrefix() + " NICK :" + newNick + "\r\n";
-    server.broadcastToSharedChannels(client, client.getChannels(), msg);
-    server.sendToClient(client.getFd(), msg);
+    server.broadcastToSharedChannels(client.getChannels(), msg);
 }
 
 

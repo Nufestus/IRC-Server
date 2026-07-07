@@ -9,11 +9,13 @@ Channel::Channel()
 {
 }
 
-Channel::Channel(const std::string& name, Client& creator)
+Channel::Channel(const std::string& name, Client& creator, const std::string &key)
     : name(name), operatorCount(0), inviteOnly(false), topicProtected(false),
-      userLimit(0), limited(false), protectedChannel(false)
+      userLimit(0), limited(false), protectedChannel(false), channelKey(key)
 {
     members[creator.getFd()] = true;
+	if (!key.empty())
+		setChannelProtected(true);
 }
 
 Channel::~Channel()
@@ -117,7 +119,7 @@ void Channel::setTopicProtected(bool status){
 	topicProtected = status;
 }
 
-const std::size_t Channel::getLimit() const{
+std::size_t Channel::getLimit() const{
 	return userLimit;
 }
 

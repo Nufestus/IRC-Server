@@ -33,5 +33,5 @@ void CommandManager::handlePass(Client& client, const Command& cmd)
     if (!authenticateClient(client, args[0]))
         return;
 
-    client.setAuthState(Client::AuthState::AwaitNickUser);
+    client.setAuthState(Client::AwaitNickUser);
 }

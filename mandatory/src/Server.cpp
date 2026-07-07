@@ -176,7 +176,7 @@ void Server::notifyClientQuit(Client& client, const std::string& reason, bool in
 }
 
 
-Channel* Server::getOrCreateChannel(const std::string& channelName, Client* creator)
+Channel* Server::getOrCreateChannel(const std::string& channelName, Client* creator, const std::string &key)
 {
     std::map<std::string, Channel>::iterator it = _channels.find(channelName);
     if (it != _channels.end())
@@ -186,7 +186,8 @@ Channel* Server::getOrCreateChannel(const std::string& channelName, Client* crea
         return NULL;
 
     std::pair<std::map<std::string, Channel>::iterator, bool> result =
-        _channels.insert(std::make_pair(channelName, Channel(channelName, *creator)));
+        _channels.insert(std::make_pair(channelName, Channel(channelName, *creator, key)));
+    creator->addChannel(getChannel(channelName));
     return &result.first->second;
 }
 
@@ -205,8 +206,7 @@ void Server::memberList(Client& client, const Channel& channel){
             memberList += "@";
         memberList += member->getNick();
     }
-    // The topic (if any) : Send the channel topic to the joining user. If no topic is set, send a numeric reply indicating that there is no topic.
-    // The member list : Send the list of current members in the channel to the joining user
+
     sendNumeric(client.getFd(), 353, client.getNick(), ":= " + channel.getName() + " :" + memberList);
     sendNumeric(client.getFd(), 366, client.getNick(), channel.getName() + " :End of NAMES list");
 
@@ -231,7 +231,7 @@ bool Server::userExists(int fd) const
 }
 
 
-void Server::broadcastToSharedChannels(const Client& sender, const std::map<std::string, Channel*>& channelsToLeave, const std::string& message){
+void Server::broadcastToSharedChannels(const std::map<std::string, Channel*>& channelsToLeave, const std::string& message){
 
     std::set<int> recipients;
     for (std::map<std::string, Channel*>::const_iterator it = channelsToLeave.begin(); it != channelsToLeave.end(); ++it)
@@ -313,6 +313,9 @@ void Server::flushClient(int clientFd)
     // Always re-sync the subscription, whether or not we entered the block above
     struct epoll_event ev;
     ev.data.fd = clientFd;
-    ev.events = EPOLLIN | (buf.empty() ? 0 : EPOLLOUT);
+    ev.events = EPOLLIN;
+    if (!buf.empty()) {
+        ev.events |= EPOLLOUT;
+    }
     epoll_ctl(_epoll_fd, EPOLL_CTL_MOD, clientFd, &ev);
 }

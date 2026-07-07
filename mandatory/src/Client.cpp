@@ -3,13 +3,13 @@
 
 Client::Client()
     : _fd(0),
-      _authState(AuthState::AwaitPass),
+      _authState(Client::AwaitPass),
       _shouldDisconnect(false)
 {}
 
 Client::Client(int fd) 
 		: _fd(fd),
-		  _authState(AuthState::AwaitPass),
+		  _authState(Client::AwaitPass),
 		  _shouldDisconnect(false)
 {}
 Client::~Client() {}
@@ -43,9 +43,9 @@ const std::string& Client::getHostname() const {return _hostname;}
 
 Client::AuthState Client::getAuthState() const {return _authState;}
 
-bool Client::isRegistred() const {return _authState == AuthState::Registered;}
+bool Client::isRegistred() const {return _authState == Client::Registered;}
 
-bool Client::isPassOk() const {return _authState != AuthState::AwaitPass;}
+bool Client::isPassOk() const {return _authState != Client::AwaitPass;}
 
 bool Client::hasNick() const {return !_nick.empty();}
 

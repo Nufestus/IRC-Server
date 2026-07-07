@@ -9,11 +9,12 @@
 
 class Channel;
 
+
 class Client
 {
     public:
-        // ─── Enums (AuthState) ───────────────────────────────────────────
-        enum class AuthState
+    // ─── Enums (AuthState) ───────────────────────────────────────────
+        enum AuthState
         {
             AwaitPass,
             AwaitNickUser,

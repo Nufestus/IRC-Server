@@ -17,6 +17,7 @@
 #include "CommandManager.hpp"
 #include "Command.hpp"
 #include "Channel.hpp"
+#include <cstdio>
 
 #define MAX_EVENTS 1024
 
@@ -62,7 +63,7 @@ class Server
         // ─── Public — Getters & Management — Channels ───────────────────
         Channel* getChannel(const std::string& channelName);
         const Channel* getChannel(const std::string& channelName) const;
-        Channel* getOrCreateChannel(const std::string& channelName, Client* creator);
+        Channel* getOrCreateChannel(const std::string& channelName, Client* creator, const std::string &key);
         bool channelExists(const std::string& channelName) const;
         void removeChannel(const std::string& channelName);
 
@@ -70,7 +71,7 @@ class Server
         // void sendError(int clientFd, std::string Errorcode, std::string message);
         void sendNumeric(int clientFd, int code, const std::string& targetNick, const std::string& message, const std::string& command = "");
         void sendToClient(int clientFd, const std::string& message);
-        void broadcastToSharedChannels(const Client& sender, const std::map<std::string, Channel*>& channelsToLeave, const std::string& message);
+        void broadcastToSharedChannels(const std::map<std::string, Channel*>& channelsToLeave, const std::string& message);
         void notifyClientQuit(Client& client, const std::string& reason, bool includeSender);
 
         // ─── Public — Utilities ─────────────────────────────────────────

@@ -9,10 +9,11 @@ IrcBot::IrcBot(std::string host, int port, std::string password) : _password(pas
     serverAddr.sin_port = htons(port);
     serverAddr.sin_addr.s_addr = inet_addr(host.c_str());
 
+    
 
     if (connect(_fd, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
         std::cerr << "Connection failed" << std::endl;
-        exit(1);
+        throw ConnectError();
     }
 }
 
@@ -43,13 +44,6 @@ void IrcBot::startListening()
 
         buffer[bytesReceived] = '\0';
         std::string incoming(buffer);
-
-        if (incoming.find("PING") == 0)
-        {
-            std::string token = incoming.substr(5);
-            sendRaw("PONG " + token);
-            continue;
-        }
         
         size_t pos = incoming.find(" ");
 
@@ -67,3 +61,8 @@ void IrcBot::startListening()
 }
 
 IrcBot::~IrcBot() { close(_fd); }
+
+
+const char * IrcBot::ConnectError::what() const throw() {
+    return "connect failed";
+}
